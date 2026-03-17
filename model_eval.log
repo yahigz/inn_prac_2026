@@ -1,0 +1,3 @@
+Train accuracy (online) после 500 итераций: 83.20%
+Test accuracy: 96.67%
+Финальный epsilon: 0.0500

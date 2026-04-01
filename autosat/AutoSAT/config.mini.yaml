@@ -1,0 +1,27 @@
+iteration_num: 1
+batch_size: 1
+data_parallel_size: 4
+devoid_duplication: false
+llm_model: "openai/gpt-oss-120b"
+timeout: 15
+data_dir: "../datasets/mini/train"
+project: "EasySAT"
+task: "bump_var_function"
+original: true
+original_result: {'time': 0, 'PAR-2': 1}
+
+agent_type: 'advisor-coder-evaluator'
+agent_args_folder: './examples/EasySAT/bump_var_function'
+temperature: 0.6
+
+api_base: ""
+api_key: ""
+
+NeedEval: true
+SAT_solver_file_path: './examples/EasySAT/original_EasySAT/EasySAT.cpp'
+eval_timeout: 20
+results_save_path: './temp/eval_results/'
+eval_data_dir: "../datasets/mini/eval"
+eval_parallel_size: 4
+rand_seed: 42
+keep_intermediate_results: false

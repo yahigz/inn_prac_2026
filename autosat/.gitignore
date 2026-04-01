@@ -1,0 +1,7 @@
+.env
+
+# Local datasets and heavy artifacts
+datasets/
+AutoSAT/temp/
+AutoSAT/original_results_*.txt
+

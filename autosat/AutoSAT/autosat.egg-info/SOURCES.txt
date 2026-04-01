@@ -1,0 +1,8 @@
+LICENSE
+README.md
+setup.py
+autosat.egg-info/PKG-INFO
+autosat.egg-info/SOURCES.txt
+autosat.egg-info/dependency_links.txt
+autosat.egg-info/requires.txt
+autosat.egg-info/top_level.txt

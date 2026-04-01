@@ -1,0 +1,50 @@
+Metadata-Version: 2.4
+Name: autosat
+Version: 0.1
+Summary: implementations of automatically optimizing SAT Solvers via LLMs.
+Home-page: https://github.com/YiwenAI/AutoSAT
+Author: Yiwen Sun, Xianyin Zhang, Shiyu Huang
+Author-email: ywsun22@m.fudan.edu.cn
+License: MIT
+Project-URL: Code, https://github.com/YiwenAI/AutoSAT
+Project-URL: Paper, https://arxiv.org/abs/2402.10705
+Keywords: LLMs SAT solvers automatic
+Classifier: Programming Language :: Python :: 3
+Classifier: Programming Language :: Python :: 3.8
+Classifier: Programming Language :: Python :: 3.9
+Classifier: Programming Language :: Python :: 3.10
+Classifier: Programming Language :: Python :: 3.11
+Requires-Python: >=3.8
+License-File: LICENSE
+Requires-Dist: ray[all]==2.8.0
+Requires-Dist: jinja2==3.1.2
+Requires-Dist: openai==0.28.0
+Provides-Extra: tests
+Requires-Dist: pytest; extra == "tests"
+Requires-Dist: pytest-cov; extra == "tests"
+Requires-Dist: pytest-env; extra == "tests"
+Requires-Dist: pytest-xdist; extra == "tests"
+Requires-Dist: pytype; extra == "tests"
+Requires-Dist: mypy; extra == "tests"
+Requires-Dist: ruff; extra == "tests"
+Requires-Dist: isort>=5.0; extra == "tests"
+Requires-Dist: black; extra == "tests"
+Provides-Extra: docs
+Requires-Dist: sphinx<7.0,>=5.3; extra == "docs"
+Requires-Dist: sphinx-autobuild; extra == "docs"
+Requires-Dist: sphinx-rtd-theme; extra == "docs"
+Requires-Dist: sphinxcontrib.spelling; extra == "docs"
+Requires-Dist: sphinx-autodoc-typehints; extra == "docs"
+Requires-Dist: sphinx_copybutton; extra == "docs"
+Dynamic: author
+Dynamic: author-email
+Dynamic: classifier
+Dynamic: home-page
+Dynamic: keywords
+Dynamic: license
+Dynamic: license-file
+Dynamic: project-url
+Dynamic: provides-extra
+Dynamic: requires-dist
+Dynamic: requires-python
+Dynamic: summary

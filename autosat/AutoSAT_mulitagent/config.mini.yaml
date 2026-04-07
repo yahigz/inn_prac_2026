@@ -1,9 +1,9 @@
-iteration_num: 1
+iteration_num: 5
 batch_size: 1
-data_parallel_size: 4
+data_parallel_size: 6
 devoid_duplication: false
 llm_model: "openai/gpt-oss-120b"
-timeout: 15
+timeout: 1000
 data_dir: "../datasets/mini/train"
 project: "EasySAT"
 task: "bump_var_function"
@@ -19,9 +19,9 @@ api_key: ""
 
 NeedEval: true
 SAT_solver_file_path: './examples/EasySAT/original_EasySAT/EasySAT.cpp'
-eval_timeout: 20
+eval_timeout: 1000
 results_save_path: './temp/eval_results/'
 eval_data_dir: "../datasets/mini/eval"
-eval_parallel_size: 4
+eval_parallel_size: 6
 rand_seed: 42
 keep_intermediate_results: false

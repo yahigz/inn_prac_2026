@@ -1,0 +1,7 @@
+EasySAT(baseline) result-- time: 52 seconds ; PAR-2: 97
+EasySAT(baseline) result-- time: 52 seconds ; PAR-2: 97
+EasySAT(baseline) result-- time: 50 seconds ; PAR-2: 95
+EasySAT(baseline) result-- time: 187 seconds ; PAR-2: 367
+EasySAT(baseline) result-- time: 727 seconds ; PAR-2: 1447
+EasySAT(baseline) result-- time: 727 seconds ; PAR-2: 1447
+EasySAT(baseline) result-- time: 3007 seconds ; PAR-2: 6007

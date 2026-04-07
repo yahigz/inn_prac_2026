@@ -49,8 +49,6 @@ def evaluate(args, SAT_solver_file_path, method_name=None):
         raise RuntimeError("cannot correctly execute... plz check again")
 
     eval_data_dir = args.eval_data_dir  # TODO change xxx
-    filenames = [str(1) + "_" + str(num) + ".txt" for num in
-                 range(args.eval_parallel_size)]  # set `id` = 1 during evaluation
     data_num = len([f for f in os.listdir(eval_data_dir) if os.path.isfile(os.path.join(eval_data_dir, f))])
     print("data_num:", data_num, "eval_parallel_sizes: ", args.eval_parallel_size)
     if args.eval_parallel_size > data_num:
@@ -58,6 +56,8 @@ def evaluate(args, SAT_solver_file_path, method_name=None):
                       f"It will be replaced with the train set total num: {data_num}",
                       category=UserWarning, stacklevel=2)
         setattr(args, 'eval_parallel_size', data_num)
+    filenames = [str(1) + "_" + str(num) + ".txt" for num in
+                 range(args.eval_parallel_size)]  # set `id` = 1 during evaluation
     start_time = time.time()
     while True:
         end_time = time.time()

@@ -2,7 +2,7 @@ iteration_num: 2
 batch_size: 2
 data_parallel_size: 32
 devoid_duplication: false
-llm_model: "openai/gpt-oss-120b"
+llm_model: {$DEEPINFRA_MODEL}
 timeout: 10
 data_dir: "YOUR DATA PATH"
 project: "EasySAT"
@@ -14,8 +14,8 @@ agent_type: 'advisor-coder-evaluator' # ['advisor-coder-evaluator','coder-evalua
 agent_args_folder: './examples/EasySAT/bump_var_function' # advisor, coder , evaluator PROMPT with their args
 temperature: 0.8 # llm-temperature
 
-api_base: "https://api.deepinfra.com/v1/openai"
-api_key: "YOUR_DEEPINFRA_API_KEY"
+api_base: {$DEEPINFRA_API_BASE}
+api_key: {$DEEPINFRA_API_KEY}
 
 NeedEval: True
 SAT_solver_file_path: './examples/EasySAT/original_EasySAT/EasySAT.cpp'

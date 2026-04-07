@@ -129,6 +129,10 @@ def collect_results(answers, repetition_dict, results, args):
         result["time"].update(repetition_result["time"])
         result["prompt"].update(repetition_result["prompt"])
 
+    if len(result["PAR-2"]) == 0:
+        # No executable candidate produced metrics this round.
+        return result, {}
+
     best_key = min(result["PAR-2"], key=result["PAR-2"].get ) # global_id
     return result, {best_key: [result["time"][best_key], result["prompt"][best_key], result["PAR-2"][best_key]]}
 
@@ -170,7 +174,7 @@ def delete_InfiniteLoopInst(candidates, result_dict,results_folder='./temp/resul
         except Exception as e:
             print(f"wrong when killing procession: {e}")
         pass
-    elif platform.system() == 'Linux':
+    elif platform.system() in ('Linux', 'Darwin'):
         try:
             result = subprocess.run(['pkill', '-f', 'EasySAT'], check=True, stdout=subprocess.PIPE,
                                 stderr=subprocess.PIPE, text=True)

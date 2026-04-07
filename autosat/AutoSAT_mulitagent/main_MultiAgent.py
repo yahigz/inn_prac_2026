@@ -56,7 +56,7 @@ def synchronized_asked(coder_args, evaluator_args, global_id, args):
 
     # *------------- Coder START --------------------*
     if len(coder_args['_directions']) > 0:
-        random.shuffle(coder_args['modification_direction'])
+        random.shuffle(coder_args['_directions'])
         coder_args['modification_direction'] = "Here are some potential improvement directions: \n    " + "\n    ".join(
             coder_args['_directions'][0:2])
     else:
@@ -345,30 +345,78 @@ def main(args):
         filenames = [str(global_id) + "_" + str(num) + ".txt" for global_id in id_list for num in
                      range(args.data_parallel_size)]
         print("filenames: ", filenames)
-        while True:
-            end_time = time.time()
-            if end_time - start_time > args.timeout * (2 * data_num / args.data_parallel_size + 30):
-                warnings.warn(f": Infinite loop for some Solver Programs... please check later",
-                              category=UserWarning, stacklevel=2)
-                result, _ = collect_results(answers=answers,
-                                            repetition_dict=repetition_dict,
-                                            results=results,
-                                            args=args)
-                delete_InfiniteLoopInst(candidates=['finished' + fname for fname in filenames], result_dict=result)
-                # re-construct best_result according to `valid result`
-                best_key = min(result["PAR-2"], key=result["PAR-2"].get)
+        if len(filenames) == 0:
+            warnings.warn(
+                "No successful generated candidates in this iteration. "
+                "Likely all compilations/executions failed; skipping result collection for this round.",
+                category=UserWarning,
+                stacklevel=2,
+            )
+            result = {
+                "time": {},
+                "prompt": {},
+                "PAR-2": {},
+                "satisfiable": {},
+                "unsatisfiable": {},
+                "timeout": {},
+            }
+            if len(results["PAR-2"]) > 0:
+                hist_best_key = min(results["PAR-2"], key=results["PAR-2"].get)
                 best_result = {
-                    best_key: [result["time"][best_key], result["prompt"][best_key], result["PAR-2"][best_key]]}
-                break
+                    hist_best_key: [
+                        results["time"][hist_best_key],
+                        results["prompt"][hist_best_key],
+                        results["PAR-2"][hist_best_key],
+                    ]
+                }
+            else:
+                best_result = {}
+        else:
+            while True:
+                end_time = time.time()
+                if end_time - start_time > args.timeout * (2 * data_num / args.data_parallel_size + 30):
+                    warnings.warn(f": Infinite loop for some Solver Programs... please check later",
+                                  category=UserWarning, stacklevel=2)
+                    result, _ = collect_results(answers=answers,
+                                                repetition_dict=repetition_dict,
+                                                results=results,
+                                                args=args)
+                    delete_InfiniteLoopInst(candidates=['finished' + fname for fname in filenames], result_dict=result)
+                    # re-construct best_result according to valid result when available.
+                    if len(result["PAR-2"]) > 0:
+                        best_key = min(result["PAR-2"], key=result["PAR-2"].get)
+                        best_result = {
+                            best_key: [result["time"][best_key], result["prompt"][best_key], result["PAR-2"][best_key]]}
+                    elif len(results["PAR-2"]) > 0:
+                        hist_best_key = min(results["PAR-2"], key=results["PAR-2"].get)
+                        best_result = {
+                            hist_best_key: [
+                                results["time"][hist_best_key],
+                                results["prompt"][hist_best_key],
+                                results["PAR-2"][hist_best_key],
+                            ]
+                        }
+                    else:
+                        best_result = {}
+                    break
 
-            all_exist = all(
-                os.path.exists(os.path.join('./temp/results/', 'finished' + filename)) for filename in filenames)
-            if all_exist:
-                result, best_result = collect_results(answers=answers,
-                                                      repetition_dict=repetition_dict,
-                                                      results=results,
-                                                      args=args)
-                break
+                all_exist = all(
+                    os.path.exists(os.path.join('./temp/results/', 'finished' + filename)) for filename in filenames)
+                if all_exist:
+                    result, best_result = collect_results(answers=answers,
+                                                          repetition_dict=repetition_dict,
+                                                          results=results,
+                                                          args=args)
+                    if len(best_result) == 0 and len(results["PAR-2"]) > 0:
+                        hist_best_key = min(results["PAR-2"], key=results["PAR-2"].get)
+                        best_result = {
+                            hist_best_key: [
+                                results["time"][hist_best_key],
+                                results["prompt"][hist_best_key],
+                                results["PAR-2"][hist_best_key],
+                            ]
+                        }
+                    break
 
         print("collecting execution time consuming: ", end_time - start_time)
         advisor_record = {"task_description": description,
@@ -453,7 +501,7 @@ if __name__ == '__main__':
     parser.add_argument('--original', type=bool, default=False)
     parser.add_argument('--agent_type',
                         type=str,
-                        default="advisor_evaluator_coder",
+                        default="advisor-coder-evaluator",
                         choices=['advisor-coder-evaluator', 'coder-evaluator', 'advisor-coder', 'coder-only'])
     parser.add_argument('--temperature', type=float, default=1.2)
     parser.add_argument('--NeedEval', type=bool, default=True)

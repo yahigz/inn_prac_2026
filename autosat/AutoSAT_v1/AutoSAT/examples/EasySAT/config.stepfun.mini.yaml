@@ -1,0 +1,26 @@
+iteration_num: 2
+batch_size: 2
+data_parallel_size: 8
+devoid_duplication: false
+llm_model: "stepfun-ai/Step-3.5-Flash"
+timeout: 5
+data_dir: "../../datasets/mini/train"
+project: "EasySAT/"
+task: "bump_var_function"
+original: true
+original_result: {'time': 1, 'PAR-2': 2}
+api_base: ""
+api_key: ""
+# Populated from .env:
+# - DEEPINFRA_MODEL -> llm_model
+# - DEEPINFRA_API_BASE -> api_base
+# - DEEPINFRA_API_KEY -> api_key
+
+SAT_solver_file_path: './examples/EasySAT/original_EasySAT/EasySAT.cpp'
+eval_timeout: 10
+results_save_path: './temp/eval_results/'
+eval_data_dir: "../../datasets/mini/eval"
+eval_parallel_size: 4
+rand_seed: 42
+keep_intermediate_results: False
+model_name: 'stepfun-ai/Step-3.5-Flash'

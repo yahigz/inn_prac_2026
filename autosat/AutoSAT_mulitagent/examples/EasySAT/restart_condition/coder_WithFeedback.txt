@@ -40,6 +40,8 @@ Tips:
 3) Feel free to unleash your creativity and provide correct and enhanced code. (You may consult code from previous iterations for insights, but do not copy directly).
 4) Your new {{ task }} code must be different from previous codes.
 5) Your new {{ task }} could use useful variables from the solver as inputs if necessary.
+6) Before finalizing, perform a strict self-check for C++ syntax validity: matching braces/parentheses, required semicolons, valid declarations, valid scope, and no missing return/value expressions.
+7) The output must be compilable C++ code snippet only. Do not include markdown, explanations, placeholders, or ellipsis.
 
 {{ other_tips }}
 

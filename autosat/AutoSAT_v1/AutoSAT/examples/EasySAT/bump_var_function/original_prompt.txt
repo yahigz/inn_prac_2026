@@ -5,7 +5,7 @@ This helps the solver to focus on the parts of the problem that are currently ha
 
 Your goal is to improve this bump_var function for the SAT solver, after reading and understanding the <key code> of SAT solver below.
 
-As an example, the bump_var function can be:
+As an example, the bump_var function can be (Note, that ... here means that it should contain some code! It is unacceptable to write ... in real code):
 '''
 // start
 void Solver::bump_var(int var, double coeff) {...}
@@ -28,6 +28,8 @@ Tips:
 1) Your bump_var function code must start with '''// start''' and end with '''// end'''
 2) Your bump_var function code must be different from original code
 3) Make sure your bump_var function code can be executed correctly
+4) You are writing C++ code for EasySAT. Do not output pseudocode, markdown, or explanations.
+5) Before finalizing, perform a strict C++ syntax self-check: braces/parentheses balance, semicolons, declarations, and scope validity.
 
 
 <key code> of SAT solver is:

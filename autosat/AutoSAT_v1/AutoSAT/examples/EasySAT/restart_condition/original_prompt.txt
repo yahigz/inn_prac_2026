@@ -35,6 +35,8 @@ Tips:
 1) Your judgement conditions code must start with '''// start''' and end with '''// end'''
 2) Your judgement conditions code must be different from original code
 3) Your provide lbd_queue_size must start with '''// start lbd_queue_size''' and end with '''// end lbd_queue_size'''
+4) You are writing C++ code for EasySAT. Output only valid C++ snippets, no pseudocode/markdown/explanations.
+5) Before finalizing, perform a strict C++ syntax self-check: braces/parentheses balance, semicolons, declarations, and scope validity.
 
 
 <key code> of SAT solver is:

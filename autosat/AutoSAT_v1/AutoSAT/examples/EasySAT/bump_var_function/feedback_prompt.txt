@@ -24,7 +24,7 @@ Experiment results of your provided code are:
 {{ replace_code }}
 ###
 
-Your bump_var function could use useful variables from the solver as inputs, as an example, the bump_var function must be written in the following form:
+Your bump_var function could use useful variables from the solver as inputs, as an example, the bump_var function must be written in the following form (Note, that ... here means that it should contain some code! It is unacceptable to write ... in real code):
 '''
 // start
 void Solver::bump_var(int var, double coeff) {...}
@@ -42,6 +42,9 @@ Tips:
 1) less execution time means bump_var function is better, and execution time of original code is {{ original_time }} seconds.
 2) Your bump_var function code must start with '''// start''' and end with '''// end'''
 3) Your bump_var function code must be different from previous codes
+4) You are writing C++ code for EasySAT. Do not output pseudocode, markdown, or explanations.
+5) Before finalizing, perform a strict C++ syntax self-check: braces/parentheses balance, semicolons, declarations, and scope validity.
+6) If previous code has syntax errors, you need to fix it.
 
 <key code> of SAT solver is:
 """

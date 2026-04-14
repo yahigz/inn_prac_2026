@@ -28,9 +28,47 @@ SOFTWARE.
 #include <chrono>
 #include <iostream>
 #include <filesystem>
+#include <algorithm>
+#include <fcntl.h>
+#include <sys/file.h>
+#include <unistd.h>
 #include <string>
 
 namespace fs = std::filesystem;
+
+static int claim_next_task_index(const std::string& cursor_path, int total_tasks) {
+    int fd = open(cursor_path.c_str(), O_RDWR | O_CREAT, 0666);
+    if (fd < 0) return -1;
+
+    flock(fd, LOCK_EX);
+
+    char buffer[64] = {0};
+    lseek(fd, 0, SEEK_SET);
+    ssize_t read_bytes = read(fd, buffer, sizeof(buffer) - 1);
+    int next_index = 0;
+    if (read_bytes > 0) {
+        try {
+            next_index = std::stoi(std::string(buffer, static_cast<size_t>(read_bytes)));
+        } catch (...) {
+            next_index = 0;
+        }
+    }
+
+    if (next_index >= total_tasks) {
+        flock(fd, LOCK_UN);
+        close(fd);
+        return -1;
+    }
+
+    std::string next_value = std::to_string(next_index + 1);
+    ftruncate(fd, 0);
+    lseek(fd, 0, SEEK_SET);
+    write(fd, next_value.c_str(), next_value.size());
+    fsync(fd);
+    flock(fd, LOCK_UN);
+    close(fd);
+    return next_index;
+}
 
 
 #define value(lit) (lit > 0 ? value[lit] : -value[-lit])    // Get the value of a literal
@@ -352,12 +390,20 @@ int main(int argc, char **argv) {
     int current_num_procession = std::stoi(argv[3]);
 
     std::vector<std::string> file_paths_vector;
-    int cnt = 0;
+    int cnt = 0; 
     for (const auto& entry : fs::directory_iterator(folderPath)) {
-        if (cnt % K_procession == current_num_procession) {
+        if (entry.is_regular_file()) {
             file_paths_vector.push_back(entry.path().string());
         }
-        cnt++;
+        cnt++; 
+    }
+    std::sort(file_paths_vector.begin(), file_paths_vector.end());
+
+    std::string task_cursor_path = "./temp/results/task_cursor_" + std::string(argv[1]) + ".txt";
+    if (current_num_procession == 0) {
+        std::ofstream cursor_init(task_cursor_path, std::ios::trunc);
+        cursor_init << 0;
+        cursor_init.close();
     }
 
     std::string solved_situation = "TIMEOUT";
@@ -367,7 +413,11 @@ int main(int argc, char **argv) {
     outfile.close();
 
     float total_time = 0;
-    for (auto& file_path: file_paths_vector) {
+    while (true) {
+        int task_idx = claim_next_task_index(task_cursor_path, static_cast<int>(file_paths_vector.size()));
+        if (task_idx < 0) break;
+
+        auto& file_path = file_paths_vector[task_idx];
         Solver S;
 
         char* file_name = (char*)file_path.data();

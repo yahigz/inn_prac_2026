@@ -1,0 +1,27 @@
+iteration_num: 60
+batch_size: 1
+data_parallel_size: 6
+devoid_duplication: false
+llm_model: "openai/gpt-oss-120b"
+timeout: 5000
+data_dir: "../../datasets/Zamkeller/train"
+project: "EasySAT/"
+task: "bump_var_function"
+original: true
+original_result: {'time': 0, 'PAR-2': 1}
+run_id: ""
+resume_from_checkpoint: true
+checkpoint_dir: "./results/checkpoints"
+checkpoint_path: ""
+
+api_base: "https://api.deepinfra.com/v1/openai"
+api_key: ""
+
+SAT_solver_file_path: './examples/EasySAT/original_EasySAT/EasySAT.cpp'
+eval_timeout: 5000
+results_save_path: './temp/eval_results/'
+eval_data_dir: "../../datasets/Zamkeller/eval"
+eval_parallel_size: 6
+rand_seed: 42
+keep_intermediate_results: False
+model_name: 'openai/gpt-oss-120b'

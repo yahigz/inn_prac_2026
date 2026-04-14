@@ -1,5 +1,6 @@
 import openai
 import os
+import time
 
 
 TOKEN_USAGE_SUMMARY = {
@@ -44,11 +45,36 @@ class BaseCallAPI():
         openai.api_base = self.api_base
         openai.api_key = self.api_key
         self.model_name = model_name
+        self._retry_sleep_seconds = max(1, int(os.getenv("AUTOSAT_API_RETRY_SECONDS", "10")))
+        self._max_retries = int(os.getenv("AUTOSAT_API_MAX_RETRIES", "0"))
 
     def load_prompt(self, file_dir):
         with open(file_dir, 'r') as file:
             prompt = file.read()
         return prompt
+
+    def _call_with_retries(self, request_fn, description="API call"):
+        attempt = 0
+        while True:
+            try:
+                return request_fn()
+            except KeyboardInterrupt:
+                raise
+            except Exception as exc:
+                attempt += 1
+                if self._max_retries > 0 and attempt > self._max_retries:
+                    print(
+                        f"[{description}] failed after {attempt - 1} retries: {exc}",
+                        flush=True,
+                    )
+                    raise
+
+                print(
+                    f"[{description}] error on attempt {attempt}: {exc}. "
+                    f"Retrying in {self._retry_sleep_seconds} seconds...",
+                    flush=True,
+                )
+                time.sleep(self._retry_sleep_seconds)
 
     def call_api(self, prompt, temperature):
         pass
@@ -61,14 +87,17 @@ class GPTCallAPI(BaseCallAPI):
     def call_api(self, prompt_file, temperature=0.2):
         with open(prompt_file, 'r') as file:
             prompt = file.read()
-        response = openai.ChatCompletion.create(
-            model=self.model_name,
-            # model="gpt-4",
-            messages=[
-                {"role": "system", "content": "You are a chatbot", },
-                {"role": "user", "content": prompt}],
-            temperature=temperature,
-            stream=self.stream
+        response = self._call_with_retries(
+            lambda: openai.ChatCompletion.create(
+                model=self.model_name,
+                # model="gpt-4",
+                messages=[
+                    {"role": "system", "content": "You are a chatbot", },
+                    {"role": "user", "content": prompt}],
+                temperature=temperature,
+                stream=self.stream
+            ),
+            description="GPTCallAPI.call_api",
         )
 
         if self.stream:
@@ -87,13 +116,16 @@ class GPTCallAPI(BaseCallAPI):
         return result
 
     def call_api_prompt(self, prompt, temperature=0.2):
-        response = openai.ChatCompletion.create(
-            model=self.model_name,
-            messages=[
-                {"role": "system", "content": "You are a chatbot", },
-                {"role": "user", "content": prompt}],
-            temperature=temperature,
-            stream=self.stream
+        response = self._call_with_retries(
+            lambda: openai.ChatCompletion.create(
+                model=self.model_name,
+                messages=[
+                    {"role": "system", "content": "You are a chatbot", },
+                    {"role": "user", "content": prompt}],
+                temperature=temperature,
+                stream=self.stream
+            ),
+            description="GPTCallAPI.call_api_prompt",
         )
 
         if self.stream:
@@ -123,12 +155,15 @@ class LocalCallAPI(BaseCallAPI):
         with open(prompt_file, 'r') as file:
             prompt = file.read()
 
-        response = openai.ChatCompletion.create(
-            model=self.model_name,
-            messages=[
-                {"role": "system", "content": system_prompt},
-                {"role": "user", "content": prompt}],
-                stop=stop_tokens)
+        response = self._call_with_retries(
+            lambda: openai.ChatCompletion.create(
+                model=self.model_name,
+                messages=[
+                    {"role": "system", "content": system_prompt},
+                    {"role": "user", "content": prompt}],
+                    stop=stop_tokens),
+            description="LocalCallAPI.call_api",
+        )
         _record_usage(response, self.model_name)
         return response["choices"][0]["message"]["content"]
 
@@ -137,13 +172,16 @@ class LocalCallAPI(BaseCallAPI):
         stop_tokens = ["<|im_end|>"]
         system_prompt = "You are a chatbot"
 
-        response = openai.ChatCompletion.create(
-            model=self.model_name,
-            messages=[
-                {"role": "system", "content": system_prompt},
-                {"role": "user", "content": prompt}],
+        response = self._call_with_retries(
+            lambda: openai.ChatCompletion.create(
+                model=self.model_name,
+                messages=[
+                    {"role": "system", "content": system_prompt},
+                    {"role": "user", "content": prompt}],
                 stop=stop_tokens,
-                temperature=temperature,)
+                temperature=temperature,),
+            description="LocalCallAPI.call_api_prompt",
+        )
 
         _record_usage(response, self.model_name)
         return response["choices"][0]["message"]["content"]

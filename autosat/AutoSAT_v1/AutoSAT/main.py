@@ -2,8 +2,13 @@ import os
 import argparse
 import json
 import time
+import uuid
 import yaml
 import ray
+import re
+import sys
+import glob
+from pathlib import Path
 
 from jinja2 import FileSystemLoader, Environment
 
@@ -15,19 +20,168 @@ from autosat.evaluation.evaluate import evaluate
 import warnings
 
 
+def _enable_realtime_output():
+    try:
+        sys.stdout.reconfigure(line_buffering=True)
+        sys.stderr.reconfigure(line_buffering=True)
+    except Exception:
+        pass
+
+
+def _make_run_id(explicit_run_id=""):
+    explicit_run_id = str(explicit_run_id or "").strip()
+    if explicit_run_id:
+        return explicit_run_id
+    return time.strftime("run_%Y%m%d_%H%M%S") + f"_{os.getpid()}_{uuid.uuid4().hex[:8]}"
+
+
+def _run_paths(run_id):
+    temp_root = Path("./temp/runs") / run_id
+    results_root = Path("./results/runs") / run_id
+    temp_results_dir = temp_root / "results"
+    temp_prompts_dir = temp_root / "prompts"
+    temp_easy_root = temp_root / "EasySAT"
+    checkpoint_dir = results_root / "checkpoints"
+    snapshots_dir = results_root / "snapshots"
+    eval_results_dir = results_root / "eval_results"
+    for path in [temp_results_dir, temp_prompts_dir, temp_easy_root, checkpoint_dir, snapshots_dir, eval_results_dir]:
+        path.mkdir(parents=True, exist_ok=True)
+    return {
+        "run_id": run_id,
+        "temp_root": temp_root,
+        "temp_results_dir": temp_results_dir,
+        "temp_prompts_dir": temp_prompts_dir,
+        "temp_easy_root": temp_easy_root,
+        "results_root": results_root,
+        "checkpoint_dir": checkpoint_dir,
+        "snapshots_dir": snapshots_dir,
+        "eval_results_dir": eval_results_dir,
+    }
+
+
+def _ensure_parent_dir(file_path):
+    Path(file_path).parent.mkdir(parents=True, exist_ok=True)
+
+
+def _checkpoint_paths(base_dir="./results/checkpoints"):
+    checkpoint_dir = Path(base_dir)
+    checkpoint_dir.mkdir(parents=True, exist_ok=True)
+    return checkpoint_dir, checkpoint_dir / "latest_checkpoint.json"
+
+
+def _atomic_write_json(path_obj, payload):
+    path_obj = Path(path_obj)
+    path_obj.parent.mkdir(parents=True, exist_ok=True)
+    tmp_path = path_obj.with_suffix(path_obj.suffix + ".tmp")
+    with open(tmp_path, "w", encoding="utf-8") as f:
+        json.dump(payload, f, ensure_ascii=False, indent=2)
+        f.flush()
+        os.fsync(f.fileno())
+    os.replace(tmp_path, path_obj)
+
+
+def _save_checkpoint(next_iter, results, answers, extra_params, best_result, checkpoint_dir="./results/checkpoints", run_id=""):
+    checkpoint_dir, latest_path = _checkpoint_paths(checkpoint_dir)
+    state = {
+        "version": 1,
+        "run_id": str(run_id or ""),
+        "next_iter": int(next_iter),
+        "results": results,
+        "answers": {str(k): v for k, v in answers.items()},
+        "extra_params": {str(k): v for k, v in extra_params.items()},
+        "best_result": best_result,
+        "saved_at": time.time(),
+    }
+    _atomic_write_json(latest_path, state)
+    _atomic_write_json(checkpoint_dir / f"iter_{next_iter - 1}_checkpoint.json", state)
+
+
+def _load_checkpoint(checkpoint_dir="./results/checkpoints", checkpoint_path=""):
+    if checkpoint_path:
+        candidate_path = Path(checkpoint_path)
+        if candidate_path.is_dir():
+            candidate_path = candidate_path / "latest_checkpoint.json"
+        latest_path = candidate_path
+    else:
+        _, latest_path = _checkpoint_paths(checkpoint_dir)
+
+    if not latest_path.exists():
+        return None
+    try:
+        with open(latest_path, "r", encoding="utf-8") as f:
+            state = json.load(f)
+    except json.JSONDecodeError as exc:
+        warnings.warn(
+            f"Checkpoint file is corrupted or partially written: {latest_path}. Error: {exc}",
+            category=UserWarning,
+            stacklevel=2,
+        )
+        return None
+
+    state["answers"] = {int(k): v for k, v in state.get("answers", {}).items()}
+    state["extra_params"] = {int(k): v for k, v in state.get("extra_params", {}).items()}
+    return state
+
+
+def _save_iteration_artifacts(iter_idx, result, best_result, temp_prompts_dir, results_root, snapshots_dir):
+    results_root.mkdir(parents=True, exist_ok=True)
+    snapshots_dir.mkdir(parents=True, exist_ok=True)
+
+    with open(temp_prompts_dir / f'iter_{iter_idx}_result.json', 'w', encoding='utf-8') as f:
+        json.dump(result, f, ensure_ascii=False, indent=2)
+    with open(results_root / f'iter_{iter_idx}_result.json', 'w', encoding='utf-8') as f:
+        json.dump(result, f, ensure_ascii=False, indent=2)
+
+    if best_result and len(best_result) > 0:
+        best_id = next(iter(best_result.keys()))
+        best_data = best_result[best_id]
+        snapshot = {
+            "iter": iter_idx,
+            "best_id": best_id,
+            "time": best_data[0],
+            "code": best_data[1],
+            "PAR-2": best_data[2],
+        }
+        with open(snapshots_dir / f'iter_{iter_idx}_best.json', 'w', encoding='utf-8') as f:
+            json.dump(snapshot, f, ensure_ascii=False, indent=2)
+
+
 def _extract_reference_code(prompt_file_dir):
     with open(prompt_file_dir, 'r', encoding='utf-8') as file:
         prompt_text = file.read()
 
-    start = prompt_text.rfind('// start')
-    if start == -1:
-        return ''
-    end = prompt_text.find('// end', start)
-    if end == -1:
-        return ''
+    scoped_pattern = re.compile(
+        r"To replace the original code:\s*'''[\s\S]*?// start\n([\s\S]*?)\n// end",
+        re.MULTILINE,
+    )
+    scoped_match = scoped_pattern.search(prompt_text)
+    if scoped_match:
+        candidate = scoped_match.group(1).strip()
+        if _looks_like_solver_code(candidate):
+            return candidate
 
-    reference_code = prompt_text[start + len('// start'):end]
-    return reference_code.strip('\n')
+    for match in re.finditer(r"// start\n([\s\S]*?)\n// end", prompt_text, re.MULTILINE):
+        candidate = match.group(1).strip()
+        if _looks_like_solver_code(candidate):
+            return candidate
+
+    return ''
+
+
+def _looks_like_solver_code(text):
+    if not text or len(text) < 20:
+        return False
+    banned_fragments = [
+        "must start with",
+        "Tips:",
+        "execution time",
+        "''' and end with '''",
+    ]
+    lowered = text.lower()
+    if any(fragment.lower() in lowered for fragment in banned_fragments):
+        return False
+    code_markers = ["void Solver::", "else if", "restart();", "{", ";"]
+    return any(marker in text for marker in code_markers)
 
 
 def _load_env_file_candidates():
@@ -88,8 +242,10 @@ def synchronized_executed(count, results, arguments, answer_code, *args, **kwarg
     if arguments.devoid_duplication and (answer_code in results["prompt"].values()):
         return count, 0, answer_code
     else:
+        save_path = os.path.join(arguments.temp_root, f"EasySAT_{format((count - 1) % arguments.batch_size)}", "EasySAT.cpp")
+        _ensure_parent_dir(save_path)
         revise_file(file_name=os.path.join("./examples/", project_dir, "EasySAT.cpp"),
-                    save_dir='./temp/EasySAT_{}/EasySAT.cpp'.format(format((count - 1) % arguments.batch_size)),
+                    save_dir=save_path,
                     replace_code=answer_code,
                     timeout=arguments.timeout,
                     data_dir="\"{}\"".format(arguments.data_dir),
@@ -100,6 +256,21 @@ def synchronized_executed(count, results, arguments, answer_code, *args, **kwarg
 
 
 def main(args):
+    _enable_realtime_output()
+    run_id = _make_run_id(getattr(args, "run_id", ""))
+    os.environ["AUTOSAT_RUN_ID"] = run_id
+    paths = _run_paths(run_id)
+    args.run_id = run_id
+    args.temp_root = str(paths["temp_root"])
+    args.temp_results_dir = './temp/results/'
+    args.temp_prompts_dir = str(paths["temp_prompts_dir"])
+    args.temp_easy_root = str(paths["temp_easy_root"])
+    args.results_root = str(paths["results_root"])
+    args.checkpoint_dir = str(paths["checkpoint_dir"])
+    args.snapshots_dir = str(paths["snapshots_dir"])
+    args.eval_results_dir = str(paths["eval_results_dir"])
+    args.results_save_path = args.eval_results_dir
+    os.makedirs(args.temp_results_dir, exist_ok=True)
     data_dir = args.data_dir
     data_num = len([f for f in os.listdir(data_dir) if os.path.isfile(os.path.join(data_dir, f))])
     if args.data_parallel_size > data_num:
@@ -112,6 +283,8 @@ def main(args):
     answers = {}  # record answers from llm.
     extra_params = {}  # e.g. lbd_queue_size
     count = 0
+    best_result = {}
+    start_iter = 0
     results = {
         "time": {},
         "prompt": {},
@@ -119,43 +292,78 @@ def main(args):
     }
 
     project_dir = os.path.join(args.project, args.task)
-    print("project_dir: {}".format(project_dir))
+    print("project_dir: {}".format(project_dir), flush=True)
 
-    train_init(args)
+    resume_enabled = bool(getattr(args, "resume_from_checkpoint", True))
+    checkpoint_dir = str(getattr(args, "checkpoint_dir", str(paths["checkpoint_dir"])) or str(paths["checkpoint_dir"]))
+    checkpoint_path = str(getattr(args, "checkpoint_path", "") or "").strip()
+    resumed = False
+    if resume_enabled:
+        state = _load_checkpoint(checkpoint_dir=checkpoint_dir, checkpoint_path=checkpoint_path)
+        if state is not None:
+            loaded_run_id = str(state.get("run_id", run_id) or run_id)
+            if loaded_run_id and loaded_run_id != run_id:
+                run_id = loaded_run_id
+                os.environ["AUTOSAT_RUN_ID"] = run_id
+                paths = _run_paths(run_id)
+                args.run_id = run_id
+                args.temp_root = str(paths["temp_root"])
+                args.temp_results_dir = str(paths["temp_results_dir"])
+                args.temp_prompts_dir = str(paths["temp_prompts_dir"])
+                args.temp_easy_root = str(paths["temp_easy_root"])
+                args.results_root = str(paths["results_root"])
+                args.checkpoint_dir = str(paths["checkpoint_dir"])
+                args.snapshots_dir = str(paths["snapshots_dir"])
+                args.eval_results_dir = str(paths["eval_results_dir"])
+                args.results_save_path = args.eval_results_dir
+                checkpoint_dir = args.checkpoint_dir
+            start_iter = int(state.get("next_iter", 0))
+            results = state.get("results", results)
+            answers = state.get("answers", answers)
+            extra_params = state.get("extra_params", extra_params)
+            best_result = state.get("best_result", best_result)
+            resumed = True
+            print(f"[Checkpoint] Resumed from iteration {start_iter}.", flush=True)
 
-    # replace file
-    env = Environment(loader=FileSystemLoader(os.path.join("./examples/", project_dir)))
+    if (not resumed) or ("0" not in results.get("time", {})):
+        train_init(args)
 
-    template = env.get_template("EasySAT_original.cpp") # we set `EasySAT` as baseline here, you can replace with yours
-    output = template.render(timeout=args.timeout, data_dir="\"{}\"".format(args.data_dir))
-    with open("./temp/EasySAT_{}/EasySAT.cpp".format(count), 'w') as f:
-        f.write(output)
+        env = Environment(loader=FileSystemLoader(os.path.join("./examples/", project_dir)))
+        template = env.get_template("EasySAT_original.cpp") # we set `EasySAT` as baseline here, you can replace with yours
+        output = template.render(timeout=args.timeout, data_dir="\"{}\"".format(args.data_dir))
+        baseline_cpp = os.path.join(args.temp_root, f"EasySAT_{count}", "EasySAT.cpp")
+        _ensure_parent_dir(baseline_cpp)
+        with open(baseline_cpp, 'w') as f:
+            f.write(output)
 
-    if args.original:
-        success = execution_worker.execute_original(count, args.data_parallel_size)
-        assert (count == 0)
-        filenames = [str(count) + "_" + str(num) + ".txt" for num in range(args.data_parallel_size)]
-        start_time = time.time()
-        while True:
-            end_time = time.time()
-            if end_time-start_time > args.timeout * (2*data_num/args.data_parallel_size):
-                raise ValueError("Infinite loop error!!!")
-            all_exist = all(os.path.exists(os.path.join('./temp/results/', 'finished'+filename)) for filename in filenames)
-            if all_exist:
-                results, best_result = collect_results(answers={0: ''},
-                                                       repetition_dict={},
-                                                       results={},
-                                                       args=args)
-                break
+        if args.original:
+            success = execution_worker.execute_original(count, args.data_parallel_size)
+            assert (count == 0)
+            filenames = [str(count) + "_" + str(num) + ".txt" for num in range(args.data_parallel_size)]
+            start_time = time.time()
+            while True:
+                end_time = time.time()
+                if end_time-start_time > args.timeout * (2*data_num/args.data_parallel_size):
+                    raise ValueError("Infinite loop error!!!")
+                all_exist = all(os.path.exists(os.path.join(args.temp_results_dir, 'finished'+filename)) for filename in filenames)
+                if all_exist:
+                    results, best_result = collect_results(answers={0: ''},
+                                                           repetition_dict={},
+                                                           results={},
+                                                           args=args)
+                    break
+        else:
+            results["time"]["0"] = args.original_result['time']
+            results["prompt"]["0"] = " "
+            results["PAR-2"]["0"] = args.original_result['PAR-2']
     else:
-        results["time"]["0"] = args.original_result['time']
-        results["prompt"]["0"] = " "
-        results["PAR-2"]["0"] = args.original_result['PAR-2']
-    print("EasySAT(baseline) result-- time: {} seconds ; PAR-2: {}".format(results["time"]["0"], results["PAR-2"]["0"]))
+        if not os.path.exists(os.path.join(args.temp_root, "EasySAT_0")):
+            train_init(args)
+    print("EasySAT(baseline) result-- time: {} seconds ; PAR-2: {}".format(results["time"]["0"], results["PAR-2"]["0"]), flush=True)
 
-    for i in range(args.iteration_num):
+    for i in range(start_iter, args.iteration_num):
         # clean temp results
-        clean_files(folder_path="./temp/results/", mode="all")
+        clean_files(folder_path=args.temp_results_dir, mode="all")
         id_list = []
 
         if i == 0:
@@ -169,30 +377,35 @@ def main(args):
                 f"Experiment {num}, Your provided {args.project}--{args.task}: \n'''{result['prompt'][value[0]]}''', \n execution time is {result['time'][value[0]]} seconds. PAR-2 ( Penalized Average Runtime with factor 2) is {result['PAR-2'][value[0]]} seconds. "
                 for num, value in enumerate(result["time"].items())]
             result_prompt = '\n '.join(result_prompt)
-            print("iteration: ", i, "\n results_prompt: \n", result_prompt)
+            print("iteration: ", i, "\n results_prompt: \n", result_prompt, flush=True)
 
             # Add the result matrix into next round prompt.
             revise_file(file_name= os.path.join("./examples/", project_dir, "feedback_prompt.txt"),
-                        save_dir='./temp/prompts/feedback_prompt.txt',
+                        save_dir=os.path.join(args.temp_prompts_dir, 'feedback_prompt.txt'),
                         replace_code=result_prompt,
                         original_time=int(results["time"]["0"]),
                         best_code=list(best_result.values())[0][1]
                         )
-            prompt_file_dir = './temp/prompts/feedback_prompt.txt'
+            prompt_file_dir = os.path.join(args.temp_prompts_dir, 'feedback_prompt.txt')
 
         start_time = time.time()
         answer_code_cur_round = {}
         lbd_queue_size_cur_round = {}
         tasks = [synchronized_asked.remote(prompt_file_dir, i * args.batch_size + batch_id + 1, args)
                  for batch_id in range(args.batch_size)]
-
-        for future in ray.get(tasks):
+        print(f"[Iteration {i}] Waiting for LLM responses from {len(tasks)} tasks...", flush=True)
+        try:
+            futures = ray.get(tasks, timeout=args.timeout * 10)
+        except Exception as e:
+            print(f"[ERROR] Ray task timeout or failure: {e}", flush=True)
+            raise
+        for future in futures:
             count, answer_code, lbd_queue_size = future
             batch_id = get_batch_id(count, args.batch_size)
             answer_code_cur_round[batch_id] = answer_code
             lbd_queue_size_cur_round[batch_id] = lbd_queue_size if lbd_queue_size.isdigit() else '50' # original lbd_queue_size = 50
         end_time = time.time()
-        print("querying consuming: {} seconds".format(end_time-start_time))
+        print("querying consuming: {} seconds".format(end_time-start_time), flush=True)
 
         start_time = time.time()
         if args.task == "restart_condition":
@@ -209,7 +422,13 @@ def main(args):
                      answer_code=answer_code_cur_round[batch_id]) for batch_id in range(args.batch_size)]
 
         repetition_dict = {}
-        for future in ray.get(tasks):
+        print(f"[Iteration {i}] Waiting for execution results from {len(tasks)} tasks...", flush=True)
+        try:
+            execute_futures = ray.get(tasks, timeout=args.timeout * 10)
+        except Exception as e:
+            print(f"[ERROR] Execution task timeout or failure: {e}", flush=True)
+            raise
+        for future in execute_futures:
             count, success, answer_code = future
             answers[count] = answer_code
 
@@ -220,15 +439,16 @@ def main(args):
             elif args.devoid_duplication and success == 0:
                 repetition_dict[count] = answer_code
         end_time = time.time()
-        print("sending execution time consuming: {} seconds.".format(end_time-start_time))
+        print("sending execution time consuming: {} seconds.".format(end_time-start_time), flush=True)
         start_time = time.time()
         filenames = [str(global_id) + "_" + str(num) + ".txt" for global_id in id_list for num in range(args.data_parallel_size)]
-        print("filenames: ", filenames)
+        print(f"[Iteration {i}] Waiting for {len(filenames)} result files...", flush=True)
         while True:
             end_time = time.time()
-            if end_time-start_time > args.timeout * (2*data_num/args.data_parallel_size):
-                # raise ValueError("Infinite loop error!!!")
-                warnings.warn(f": Infinite loop for some Solver Programs... please check later",
+            elapsed = end_time - start_time
+            timeout_limit = args.timeout * (2*data_num/args.data_parallel_size)
+            if elapsed > timeout_limit:
+                warnings.warn(f"Solver timeout after {elapsed:.1f}s (limit {timeout_limit:.1f}s). Collecting partial results.",
                               category=UserWarning, stacklevel=2)
                 result, best_result = collect_results(answers=answers,
                                                       repetition_dict=repetition_dict,
@@ -236,15 +456,18 @@ def main(args):
                                                       args=args)
                 delete_InfiniteLoopInst(candidates=['finished'+fname for fname in filenames], result_dict=result)
                 break
-            all_exist = all(os.path.exists(os.path.join('./temp/results/', 'finished'+filename)) for filename in filenames)
+            all_exist = all(os.path.exists(os.path.join(args.temp_results_dir, 'finished'+filename)) for filename in filenames)
             if all_exist:
                 result, best_result = collect_results(answers=answers,
                                                       repetition_dict=repetition_dict,
                                                       results=results,
                                                       args=args)
                 break
+            if elapsed % 30 == 0 and elapsed > 0:
+                missing = [f for f in filenames if not os.path.exists(os.path.join(args.temp_results_dir, 'finished'+f))]
+                print(f"[Iteration {i}] Still waiting for {len(missing)} files after {elapsed:.1f}s...", flush=True)
 
-        print("collecting execution time consuming: {} seconds.".format(end_time-start_time))
+        print("collecting execution time consuming: {} seconds.".format(end_time-start_time), flush=True)
         if len(id_list) == 0:
             warnings.warn(
                 "No generated candidate compiled and executed successfully in this iteration. "
@@ -262,8 +485,8 @@ def main(args):
         results["time"].update(result["time"])
         results["PAR-2"].update(result["PAR-2"])
         results["prompt"].update(result["prompt"])
-        with open('./temp/prompts/iter_{}_result.json'.format(i), 'w') as f:
-            json.dump(result, f)
+        _save_iteration_artifacts(i, result, best_result, paths["temp_prompts_dir"], paths["results_root"], paths["snapshots_dir"])
+        _save_checkpoint(i + 1, results, answers, extra_params, best_result, checkpoint_dir=checkpoint_dir, run_id=run_id)
 
     final = {}
     for key in results["time"]:
@@ -272,18 +495,32 @@ def main(args):
             "PAR-2": results["PAR-2"][key],
             "prompt": results["prompt"][key],
         }
-    with open('./temp/prompts/final_result.json', 'w') as f:
-        json.dump(final, f)
+    with open(paths["temp_prompts_dir"] / 'final_result.json', 'w', encoding='utf-8') as f:
+        json.dump(final, f, ensure_ascii=False, indent=2)
+    with open(paths["results_root"] / 'final_result.json', 'w', encoding='utf-8') as f:
+        json.dump(final, f, ensure_ascii=False, indent=2)
 
     ray.shutdown()
 
     # Add evaluation 3.1
-    print('start evaluation ...')
-    if os.path.exists("./temp/results/"):
-        clean_files(folder_path="./temp/results/", mode="all")
+    print('start evaluation ...', flush=True)
+    if os.path.exists(args.temp_results_dir):
+        clean_files(folder_path=args.temp_results_dir, mode="all")
     baseline = results["PAR-2"]["0"]
     record_info = []
-    print('EasySAT baseline : {}'.format(baseline))
+    print('EasySAT baseline : {}'.format(baseline), flush=True)
+
+    baseline_solver_path = str(getattr(args, "SAT_solver_file_path", "") or "").strip()
+    if not baseline_solver_path:
+        baseline_solver_path = './examples/EasySAT/original_EasySAT/EasySAT.cpp'
+    baseline_method_name = f"baseline_{args.task}_{args.llm_model}".replace('/', '')
+    existing_baseline_eval = glob.glob(os.path.join(args.results_save_path, f"results_{baseline_method_name}_*.txt"))
+    if existing_baseline_eval:
+        print(f"[Eval] Skip baseline: already evaluated ({len(existing_baseline_eval)} file(s)).", flush=True)
+    else:
+        print(f"[Eval] Run baseline: {baseline_method_name}", flush=True)
+        evaluate(args, method_name=baseline_method_name, SAT_solver_file_path=baseline_solver_path)
+
     for global_id_str in final.keys():
         global_id = int(global_id_str)
         if global_id_str != "0":
@@ -291,13 +528,18 @@ def main(args):
                 record_info.append((global_id, final[global_id_str]["PAR-2"], final[global_id_str]["prompt"], extra_params[global_id]))
     record_info.sort(key=lambda x: x[1])
 
-    print("{} Files to evaluate...".format(len(record_info)))
+    print("{} Files to evaluate...".format(len(record_info)), flush=True)
     if len(record_info) == 0:
         return
-    for global_id, par_2, answer_code, params_dict in record_info:
+    for idx, (global_id, par_2, answer_code, params_dict) in enumerate(record_info, start=1):
         method_name = f"{args.task}_{args.llm_model}_{global_id}".replace('/', '')  # algorithm identity
-        SAT_folder = f'./temp/EasySAT_{method_name}/'
-        copy_folder(src_folder="./temp/EasySAT/", num=1, mode='eval', target_folder=SAT_folder)
+        existing_eval = glob.glob(os.path.join(args.results_save_path, f"results_{method_name}_*.txt"))
+        if existing_eval:
+            print(f"[Eval] Skip {idx}/{len(record_info)} {method_name}: already evaluated ({len(existing_eval)} file(s)).", flush=True)
+            continue
+        print(f"[Eval] Run {idx}/{len(record_info)}: {method_name}", flush=True)
+        SAT_folder = os.path.join(args.temp_root, f'EasySAT_{method_name}')
+        copy_folder(src_folder=args.temp_easy_root, num=1, mode='eval', target_folder=SAT_folder)
         SAT_solver_file_path = os.path.join(SAT_folder, 'EasySAT_modified.cpp')
 
         # replace the answer code for the specific function and other auxiliary params such as `lbd size`
@@ -331,6 +573,10 @@ if __name__ == '__main__':
 
     parser.add_argument('--api_base', type=str, default='')
     parser.add_argument('--api_key', type=str, default='')
+    parser.add_argument('--resume_from_checkpoint', type=bool, default=True)
+    parser.add_argument('--checkpoint_dir', type=str, default='./results/checkpoints')
+    parser.add_argument('--checkpoint_path', type=str, default='')
+    parser.add_argument('--run_id', type=str, default='')
 
     args = parser.parse_args()
 

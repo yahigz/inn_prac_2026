@@ -14,6 +14,43 @@ from autosat.llm_api.base_api import fastllm, get_llm_api
 from autosat.execution.execution_worker import ExecutionWorker
 from autosat.evaluation.evaluate import evaluate
 import warnings
+import re
+
+
+def _is_braces_balanced(text):
+    balance = 0
+    for ch in text:
+        if ch == '{':
+            balance += 1
+        elif ch == '}':
+            balance -= 1
+            if balance < 0:
+                return False
+    return balance == 0
+
+
+def _is_valid_generated_code(task, code):
+    if not isinstance(code, str):
+        return False
+    candidate = code.strip()
+    if len(candidate) == 0:
+        return False
+
+    signature_patterns = {
+        'bump_var': r"void\s+Solver::bump_var\s*\(\s*int\s+\w+\s*,\s*double\s+\w+\s*\)",
+        'restart_condition': r"void\s+Solver::restart\s*\(\s*\)",
+        'rephase_function': r"void\s+Solver::rephase\s*\(\s*\)",
+    }
+    pattern = signature_patterns.get(task)
+    if pattern is not None and re.search(pattern, candidate) is None:
+        return False
+
+    if ('{' not in candidate) or ('}' not in candidate):
+        return False
+    if not _is_braces_balanced(candidate):
+        return False
+
+    return True
 
 
 def _load_env_file_candidates():
@@ -63,14 +100,20 @@ def synchronized_asked(coder_args, evaluator_args, global_id, args):
         coder_args['modification_direction'] = ''
 
     coder_prompt = get_promptFromArgs(coder_args)
-    coder_result = llm_api.call_api_prompt(prompt=coder_prompt, temperature=args.temperature)
-
-    llm_generation = get_code(coder_result, seperator=['// start\n', '\n// end'])
+    llm_generation = ''
     extra_params = {}  # record extra_var's require modifying at the same time
-    for extra_var, default_value in coder_args.get('extra_var_dict', {}).items():
-        # TODO We implement this by passing params through `coder_args['extra_var_dict']`. There might be better way.
-        extra_var_value = get_code(coder_result, seperator=[f'// start {extra_var}\n', f'\n// end {extra_var}'])
-        extra_params[extra_var] = extra_var_value if extra_var_value else str(default_value)
+    max_coder_attempts = 3
+    for attempt in range(max_coder_attempts):
+        temperature_now = args.temperature if attempt == 0 else random.uniform(0.2, max(args.temperature, 0.2))
+        coder_result = llm_api.call_api_prompt(prompt=coder_prompt, temperature=temperature_now)
+        llm_generation = get_code(coder_result, seperator=['// start\n', '\n// end'])
+        for extra_var, default_value in coder_args.get('extra_var_dict', {}).items():
+            # TODO We implement this by passing params through `coder_args['extra_var_dict']`. There might be better way.
+            extra_var_value = get_code(coder_result, seperator=[f'// start {extra_var}\n', f'\n// end {extra_var}'])
+            extra_params[extra_var] = extra_var_value if extra_var_value else str(default_value)
+        if _is_valid_generated_code(coder_args.get('task', ''), llm_generation):
+            break
+        llm_generation = ''
 
     if len(llm_generation) == 0:  # nothing generated
         return global_id, '', {}
@@ -86,8 +129,8 @@ def synchronized_asked(coder_args, evaluator_args, global_id, args):
 
         evaluator_feedback = decodeRawJsonAnswer(evaluator_result)
         print(evaluator_feedback)
-        cls_type = evaluator_feedback.get('type', '')
-        if cls_type == 'No modification':
+        cls_type = str(evaluator_feedback.get('type', '')).strip().lower()
+        if cls_type == 'no modification' or (not _is_valid_generated_code(coder_args.get('task', ''), llm_generation)):
             # give coder another Change, re-write.
             temperature_now = random.uniform(0.2, max(args.temperature, 0.2))
             coder_result = llm_api.call_api_prompt(prompt=coder_prompt, temperature=temperature_now)
@@ -95,6 +138,8 @@ def synchronized_asked(coder_args, evaluator_args, global_id, args):
             for extra_var, default_value in coder_args.get('extra_var_dict', {}).items():
                 extra_var_value = get_code(coder_result, seperator=[f'// start {extra_var}\n', f'\n// end {extra_var}'])
                 extra_params[extra_var] = extra_var_value if extra_var_value else str(default_value)
+            if not _is_valid_generated_code(coder_args.get('task', ''), llm_generation):
+                return global_id, '', {}
             evaluator_args['llm_generation'] = llm_generation
             evaluator_prompt = get_promptFromArgs(evaluator_args)
             temperature_now = random.uniform(0.2, max(args.temperature, 0.2))
@@ -296,10 +341,11 @@ def main(args):
                 f"Experiment {cur_idx}, Your provided {args.project}--{args.task}: \n'''{result['prompt'][value[0]]}''', \n execution time is {result['time'][value[0]]} seconds. PAR-2 is {result['PAR-2'][value[0]]}. "
                 for cur_idx, value in enumerate(result["time"].items())]
             print(experiment_results)
-            best_code_id = next(iter(best_result.keys()))
-            best_code_lastIter = results['prompt'][best_code_id]
-            best_code_description = results['extra_params'][best_code_id].get('-extra_analysis',
-                                                                              '')  # where is analysis ???
+            best_code_id = next(iter(best_result.keys()), "0")
+            best_code_lastIter = results['prompt'].get(best_code_id, results['prompt'].get("0", ""))
+            best_extra_params = results.get('extra_params', {}).get(best_code_id, {})
+            best_code_description = best_extra_params.get('-extra_analysis', '') if isinstance(best_extra_params,
+                                                                                                 dict) else ''  # where is analysis ???
 
             coder_args["experiment_results"] = "\n ".join(experiment_results)
             coder_args["best_code"] = best_code_lastIter
@@ -418,7 +464,8 @@ def main(args):
                         }
                     break
 
-        print("collecting execution time consuming: ", end_time - start_time)
+        collect_elapsed = time.time() - start_time
+        print("collecting execution time consuming: ", collect_elapsed)
         advisor_record = {"task_description": description,
                           "modification_direction": str(advisor_result.get('modification_direction', ''))}  # TODO
         resultsUpdatePerIteration(results, result, extra_params_all, advisor_record)  # update global Dict `results`

@@ -9,12 +9,23 @@ import re
 import yaml
 import math
 import warnings
+import sys
 
-from autosat.utils import revise_file, clean_files, collect_results_eval, copy_folder
+from autosat.utils import revise_file, clean_files, collect_results_eval, copy_folder, get_temp_root
 from autosat.execution.execution_worker import ExecutionWorker
 
 
+def _enable_realtime_output():
+    try:
+        sys.stdout.reconfigure(line_buffering=True)
+        sys.stderr.reconfigure(line_buffering=True)
+    except Exception:
+        pass
+
+
 def evaluate(args, SAT_solver_file_path, method_name=None):
+
+    _enable_realtime_output()
 
     formatted_date_time = datetime.now().strftime("d%m_%d_h%Hm%M") # time string: month , day , hour , minute
 
@@ -37,7 +48,7 @@ def evaluate(args, SAT_solver_file_path, method_name=None):
 
     cnf_duration_situation_fpath = './temp/results/'    # TODO intermediate files are locked in EasySAT.cpp ...
     if os.path.exists(cnf_duration_situation_fpath):
-        clean_files(folder_path="./temp/results/", mode="all")
+        clean_files(folder_path=cnf_duration_situation_fpath, mode="all")
     else:
         os.makedirs(cnf_duration_situation_fpath) # save results
     method_name = method_name if method_name else os.path.basename(SAT_solver_file_path).replace('.cpp', '')
@@ -49,7 +60,7 @@ def evaluate(args, SAT_solver_file_path, method_name=None):
     eval_data_dir = args.eval_data_dir # TODO change xxx
     filenames = [str(1) + "_" + str(num) + ".txt" for num in range(args.eval_parallel_size)] # set `id` = 1 during evaluation
     data_num = len([f for f in os.listdir(eval_data_dir) if os.path.isfile(os.path.join(eval_data_dir, f))])
-    print("data_num:", data_num, "eval_parallel_sizes: ", args.eval_parallel_size)
+    print("data_num:", data_num, "eval_parallel_sizes: ", args.eval_parallel_size, flush=True)
     if args.eval_parallel_size > data_num:
         warnings.warn(f"The parallel num for training is too large: {args.eval_parallel_size} > {data_num}. "
                       f"It will be replaced with the train set total num: {data_num}",
@@ -60,18 +71,18 @@ def evaluate(args, SAT_solver_file_path, method_name=None):
         end_time = time.time()
         if end_time - start_time > args.eval_timeout * 1.5 * math.ceil(data_num / args.eval_parallel_size):
             raise RuntimeError("Infinite loop error!!!")
-        all_exist = all(os.path.exists(os.path.join('./temp/results/', 'finished' + filename)) for filename in filenames)
+        all_exist = all(os.path.exists(os.path.join(cnf_duration_situation_fpath, 'finished' + filename)) for filename in filenames)
         if all_exist:
             break
     if not all_exist:
         raise ValueError("sth. wrong during evaluation")
 
-    print('SAT Solver finished...')
+    print('SAT Solver finished...', flush=True)
     # STEP 2. collect results.
     collect_results_eval(raw_path=cnf_duration_situation_fpath,
                          final_path=os.path.join(args.results_save_path, 'results_{}_{}.txt'.format(method_name, formatted_date_time)),
                          args=args)
-    print(f'results are saved in {args.results_save_path} ...')
+    print(f'results are saved in {args.results_save_path} ...', flush=True)
 
     # STEP 3. remove ...
     if not args.keep_intermediate_results:

@@ -1,22 +1,26 @@
 # HOWTO: запуск AutoSAT в этом репозитории
 
 Этот файл описывает рабочий путь запуска с учетом текущих изменений в проекте:
-- запуск на macOS;
+- запуск на Linux;
 - работа через OpenAI-compatible API (DeepInfra);
-- мини-датасет из 10 самых маленьких CNF;
+- мини-датасет `mini_v2`;
 - логирование расхода токенов;
-- graceful shutdown по Ctrl+C.
+- checkpoint/resume через конфиг;
+- ретраи при временных ошибках API;
+- запуск в фоне через `nohup`.
+- каждый запуск получает свой `run_id`, поэтому артефакты не перетираются.
 
 ## 1. Что уже подготовлено
 
 - Датасеты распакованы в `datasets/`.
-- В `datasets/mini/` оставлены только 10 самых маленьких CNF:
-  - `datasets/mini/train` -> 8 файлов
-  - `datasets/mini/eval` -> 2 файла
-- Мини-конфиг: `AutoSAT/config.mini.yaml`
+- Текущий мини-датасет: `datasets/mini_v2/`
+  - `datasets/mini_v2/train`
+  - `datasets/mini_v2/eval`
+- В `mini_v2` добавлены 20 самых маленьких инстансов из `Zamkeller`, которые отсутствовали в наборе.
+- Мини-конфиг: `AutoSAT_v1/AutoSAT/config.mini.yaml`
 - Git игнорирует тяжелые файлы через `.gitignore`:
   - `datasets/`
-  - `AutoSAT/temp/`
+  - `AutoSAT_v1/AutoSAT/temp/`
 
 ## 2. Требования окружения
 
@@ -31,7 +35,7 @@ source .venv/bin/activate
 Установить/обновить зависимости AutoSAT:
 
 ```bash
-cd AutoSAT
+cd AutoSAT_v1/AutoSAT
 python -m pip install -r requirements.txt
 python -m pip install -e .
 python setup.py develop
@@ -66,21 +70,57 @@ DEEPINFRA_API_KEY="<YOUR_KEY>"
 
 ## 4. Мини-запуск обучения
 
-Из папки `AutoSAT`:
+Из папки `AutoSAT_v1/AutoSAT`:
 
 ```bash
-python main_MultiAgent.py --config ./config.mini.yaml
+python3 main.py --config ./config.mini.yaml
 ```
 
-Текущие параметры мини-конфига (`AutoSAT/config.mini.yaml`):
-- `iteration_num: 1`
+Текущие параметры мини-конфига (`AutoSAT_v1/AutoSAT/config.mini.yaml`):
+- `iteration_num: 60`
 - `batch_size: 1`
-- `data_parallel_size: 4`
-- `data_dir: ../datasets/mini/train`
-- `eval_data_dir: ../datasets/mini/eval`
+- `data_parallel_size: 6`
+- `data_dir: ../../datasets/mini_v2/train`
+- `eval_data_dir: ../../datasets/mini_v2/eval`
 - `llm_model: openai/gpt-oss-120b`
+- `resume_from_checkpoint: true`
+- `run_id: ""`
+- `checkpoint_dir: ./results/checkpoints`
+- `checkpoint_path: ""`
 
-## 5. Как читать вывод
+Если `run_id` пустой, он генерируется автоматически при старте.
+Если нужно продолжить старый запуск, укажи тот же `run_id` или конкретный `checkpoint_path`.
+
+Чтобы явно продолжить с конкретного состояния, укажи:
+
+```yaml
+checkpoint_path: "./results/checkpoints/iter_12_checkpoint.json"
+```
+
+Если `checkpoint_path` пустой, используется `latest_checkpoint.json` из `checkpoint_dir`.
+
+## 5. Как работает checkpoint/resume
+
+После каждой итерации сохраняются:
+- `results/checkpoints/latest_checkpoint.json`
+- `results/checkpoints/iter_<N>_checkpoint.json`
+- `results/iter_<N>_result.json`
+- `results/snapshots/iter_<N>_best.json`
+
+В чекпоинте лежат:
+- `next_iter` — с какой итерации продолжать;
+- `results` — накопленные метрики;
+- `answers` — ответы модели;
+- `extra_params` — дополнительные параметры;
+- `best_result` — лучший найденный результат.
+
+На старте `main.py`:
+1. читает `resume_from_checkpoint`;
+2. ищет чекпоинт по `checkpoint_path` или в `checkpoint_dir`;
+3. если чекпоинт есть, возобновляет работу с `next_iter`;
+4. если чекпоинта нет, стартует с нуля.
+
+## 6. Как читать вывод
 
 ### Базовые метрики
 - `Backbone(original) result -- time: X seconds ; PAR-2: Y`
@@ -108,7 +148,49 @@ python main_MultiAgent.py --config ./config.mini.yaml
 
 Практически: для оценки общего расхода запуска суммируйте `call_total` по всем строкам `TokenUsage` (включая worker-логи Ray).
 
-## 6. Graceful shutdown
+## 7. Ретраи при падении API
+
+Если API временно падает, запрос повторяется через паузу.
+
+Поддерживаются переменные окружения:
+
+```env
+AUTOSAT_API_RETRY_SECONDS=10
+AUTOSAT_API_MAX_RETRIES=0
+```
+
+Значения по умолчанию:
+- `AUTOSAT_API_RETRY_SECONDS=10` — ждать 10 секунд между попытками;
+- `AUTOSAT_API_MAX_RETRIES=0` — безлимитные повторы.
+
+Если нужно ограничить число попыток, поставь, например:
+
+```env
+AUTOSAT_API_MAX_RETRIES=5
+```
+
+## 8. Запуск в фоне
+
+Для долгого прогона удобно использовать `nohup`:
+
+```bash
+cd AutoSAT_v1/AutoSAT
+nohup env PYTHONUNBUFFERED=1 /home/bibaboba/inn_prac/inn_prac_2026/.venv/bin/python main.py --config config.mini.yaml > nohup.mini_v2.log 2>&1 &
+```
+
+Смотреть лог:
+
+```bash
+tail -f nohup.mini_v2.log
+```
+
+Остановить прогон:
+
+```bash
+pkill -f 'main.py --config config.mini.yaml'
+```
+
+## 9. Graceful shutdown
 
 Если нажать Ctrl+C во время train/eval:
 - срабатывает `KeyboardInterrupt` handler в `main_MultiAgent.py`;
@@ -117,14 +199,18 @@ python main_MultiAgent.py --config ./config.mini.yaml
 
 Это защищает от зависших фоновых процессов после прерывания.
 
-## 7. Где искать артефакты
+## 10. Где искать артефакты
 
 - Промежуточные и финальные результаты промптов:
-  - `AutoSAT/temp/prompts/`
+  - `AutoSAT_v1/AutoSAT/temp/prompts/`
 - Результаты eval:
-  - `AutoSAT/temp/eval_results/`
+  - `AutoSAT_v1/AutoSAT/temp/eval_results/`
+- Чекпоинты:
+  - `AutoSAT_v1/AutoSAT/results/checkpoints/`
+- Снимки лучших итераций:
+  - `AutoSAT_v1/AutoSAT/results/snapshots/`
 
-## 8. Типовые проблемы
+## 11. Типовые проблемы
 
 ### `Unsupported llm_model without external API endpoint`
 Причина: пустой `api_base` и модель не попала в локальные ветки.
@@ -146,19 +232,19 @@ python main_MultiAgent.py --config ./config.mini.yaml
 ### Предупреждение про `total_time` в C++
 Это compile warning (`unused variable`), запуск не ломает.
 
-## 9. Полезные команды
+## 12. Полезные команды
 
 Проверить размер мини-сплита:
 
 ```bash
-find datasets/mini/train -type f -name '*.cnf' | wc -l
-find datasets/mini/eval -type f -name '*.cnf' | wc -l
+find datasets/mini_v2/train -type f -name '*.cnf' | wc -l
+find datasets/mini_v2/eval -type f -name '*.cnf' | wc -l
 ```
 
 Запустить eval отдельно:
 
 ```bash
-cd AutoSAT
+cd AutoSAT_v1/AutoSAT
 python evaluate.py --config ./examples/EasySAT/eval_config.yaml
 ```
 

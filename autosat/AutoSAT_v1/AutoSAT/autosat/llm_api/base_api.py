@@ -1,4 +1,5 @@
 import os
+import time
 
 import openai
 
@@ -10,11 +11,72 @@ class BaseCallAPI():
         openai.api_base = self.api_base
         openai.api_key = self.api_key
         self.model_name = model_name
+        self._cum_prompt_tokens = 0
+        self._cum_completion_tokens = 0
+        self._cum_total_tokens = 0
+        self._cum_calls = 0
+        self._retry_sleep_seconds = max(1, int(os.getenv("AUTOSAT_API_RETRY_SECONDS", "10")))
+        self._max_retries = int(os.getenv("AUTOSAT_API_MAX_RETRIES", "0"))
+
+    def _log_token_usage(self, usage):
+        if usage is None:
+            return
+
+        if isinstance(usage, dict):
+            prompt_tokens = usage.get("prompt_tokens", 0)
+            completion_tokens = usage.get("completion_tokens", 0)
+            total_tokens = usage.get("total_tokens", 0)
+        else:
+            prompt_tokens = getattr(usage, "prompt_tokens", 0)
+            completion_tokens = getattr(usage, "completion_tokens", 0)
+            total_tokens = getattr(usage, "total_tokens", 0)
+
+        try:
+            prompt_tokens = int(prompt_tokens or 0)
+            completion_tokens = int(completion_tokens or 0)
+            total_tokens = int(total_tokens or 0)
+        except Exception:
+            return
+
+        self._cum_calls += 1
+        self._cum_prompt_tokens += prompt_tokens
+        self._cum_completion_tokens += completion_tokens
+        self._cum_total_tokens += total_tokens
+
+        print(
+            f"[TokenUsage] model={self.model_name} "
+            f"call_prompt={prompt_tokens} call_completion={completion_tokens} call_total={total_tokens} "
+            f"cum_calls={self._cum_calls} cum_prompt={self._cum_prompt_tokens} "
+            f"cum_completion={self._cum_completion_tokens} cum_total={self._cum_total_tokens}"
+        , flush=True)
 
     def load_prompt(self, file_dir):
         with open(file_dir, 'r') as file:
             prompt = file.read()
         return prompt
+
+    def _call_with_retries(self, request_fn, description="API call"):
+        attempt = 0
+        while True:
+            try:
+                return request_fn()
+            except KeyboardInterrupt:
+                raise
+            except Exception as exc:
+                attempt += 1
+                if self._max_retries > 0 and attempt > self._max_retries:
+                    print(
+                        f"[{description}] failed after {attempt - 1} retries: {exc}",
+                        flush=True,
+                    )
+                    raise
+
+                print(
+                    f"[{description}] error on attempt {attempt}: {exc}. "
+                    f"Retrying in {self._retry_sleep_seconds} seconds...",
+                    flush=True,
+                )
+                time.sleep(self._retry_sleep_seconds)
 
     def call_api(self, prompt, temperature):
         pass
@@ -27,25 +89,20 @@ class GPTCallAPI(BaseCallAPI):
     def call_api(self, prompt_file, temperature=0.2):
         with open(prompt_file, 'r') as file:
             prompt = file.read()
-        response = openai.ChatCompletion.create(
-            model=self.model_name,
-            # model="gpt-4",
-            messages=[
-                {"role": "system", "content": "You are a chatbot", },
-                {"role": "user", "content": prompt}],
-            temperature=temperature,
-            stream=True
+        response = self._call_with_retries(
+            lambda: openai.ChatCompletion.create(
+                model=self.model_name,
+                # model="gpt-4",
+                messages=[
+                    {"role": "system", "content": "You are a chatbot", },
+                    {"role": "user", "content": prompt}],
+                temperature=temperature,
+                stream=False
+            ),
+            description="GPTCallAPI.call_api",
         )
-        result = ""
-        try:
-            for chunk in response:
-                if chunk.choices[0].delta.content is not None:
-                    result += chunk.choices[0].delta.content
-                    # print(chunk.choices[0].delta.content, end="")
-        except:
-            pass
-
-        return result
+        self._log_token_usage(response.get("usage", None))
+        return response["choices"][0]["message"]["content"]
 
 
 class LocalCallAPI(BaseCallAPI):
@@ -60,12 +117,16 @@ class LocalCallAPI(BaseCallAPI):
         with open(prompt_file, 'r') as file:
             prompt = file.read()
 
-        response = openai.ChatCompletion.create(
-            model=self.model_name,
-            messages=[
-                {"role": "system", "content": system_prompt},
-                {"role": "user", "content": prompt}],
-                stop=stop_tokens)
+        response = self._call_with_retries(
+            lambda: openai.ChatCompletion.create(
+                model=self.model_name,
+                messages=[
+                    {"role": "system", "content": system_prompt},
+                    {"role": "user", "content": prompt}],
+                    stop=stop_tokens),
+            description="LocalCallAPI.call_api",
+        )
+        self._log_token_usage(response.get("usage", None))
         return response["choices"][0]["message"]["content"]
 
 

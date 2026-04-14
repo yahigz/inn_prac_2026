@@ -24,6 +24,9 @@ Tips:
 3) Your {{ task }} code must be different from original codes.
 4) You can only modify the current {{ task }} and use the existing external variables (e.g. variables that defined in Solver).
 5) You cannot add new external variables outside the {{ task }}.
+6) Before finalizing, perform a strict self-check for C++ syntax validity: matching braces/parentheses, required semicolons, valid declarations, valid scope, and no missing return/value expressions.
+7) The output must be compilable C++ code snippet only. Do not include markdown, explanations, placeholders, or ellipsis.
+8) You must output the complete function definition with exact signature `void Solver::bump_var(int var, double coeff)` and a valid function body.
 {{ other_tips }}
 
 <key code> of SAT solver is:

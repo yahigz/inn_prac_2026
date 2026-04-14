@@ -7,9 +7,33 @@ import platform
 import subprocess
 
 
+def _run_id():
+    return (os.getenv("AUTOSAT_RUN_ID") or "").strip()
+
+
+def _run_root(base_dir):
+    run_id = _run_id()
+    if run_id:
+        return os.path.join(base_dir, "runs", run_id)
+    return base_dir
+
+
+def get_temp_root():
+    return _run_root("./temp")
+
+
+def get_results_root():
+    return _run_root("./results")
+
+
 def get_code(answer, seperator):
-    start = answer.find(seperator[0]) + len(seperator[0])
+    start = answer.find(seperator[0])
+    if start == -1:
+        return ''
+    start += len(seperator[0])
     end = answer.find(seperator[1], start) # - len(seperator[1])
+    if end == -1:
+        return ''
     return answer[start:end]
 
 
@@ -92,7 +116,7 @@ def process_raw_results(folder_path, timeout, answers=None):
                 else:
                     result["time"][id] = tmp_total_time
                     result["PAR-2"][id] = tmp_par2
-                    result["prompt"][id] = answers[int(id)] if answers else 'Evaluation Stage.'
+                    result["prompt"][id] = answers.get(int(id), 'Evaluation Stage.') if answers else 'Evaluation Stage.'
                     for situation_key in tmp_situation:
                         result[situation_key][id] = tmp_situation[situation_key]
     if answers is not None: # train
@@ -157,7 +181,9 @@ def fill_core_codes(origin_file, target_file, answer_code,**kwargs):
     return
 
 
-def delete_InfiniteLoopInst(candidates, result_dict, results_folder='./temp/results/'):
+def delete_InfiniteLoopInst(candidates, result_dict, results_folder=None):
+    if results_folder is None:
+        results_folder = './temp/results/'
     failed_id_list = []
     for file_name in candidates:
         if not os.path.isfile(os.path.join(results_folder, file_name)):  # failed
@@ -187,8 +213,9 @@ def delete_InfiniteLoopInst(candidates, result_dict, results_folder='./temp/resu
 
 def copy_folder(src_folder, num, mode='train', target_folder = None):
     if mode == 'train':
+        base_folder = src_folder.rstrip('/\\')
         for i in range(num):
-            new_folder_path = src_folder[:-1] + "_{}/".format(i)
+            new_folder_path = base_folder + "_{}".format(i)
             if os.path.exists(new_folder_path):
                 shutil.rmtree(new_folder_path)
             shutil.copytree(src_folder, new_folder_path)
@@ -210,15 +237,21 @@ def find_key_for_value(results, value_to_find):
 
 
 def train_init(args):
-    if os.path.exists("./temp/results/"):
-        clean_files(folder_path="./temp/results/", mode="all")
+    temp_root = get_temp_root()
+    results_folder = './temp/results/'
+    prompts_folder = os.path.join(temp_root, 'prompts')
+    easy_sat_folder = os.path.join(temp_root, 'EasySAT')
+
+    os.makedirs(results_folder, exist_ok=True)
+    os.makedirs(prompts_folder, exist_ok=True)
+
+    if os.path.exists(results_folder):
+        clean_files(folder_path=results_folder, mode="all")
     else:
-        os.makedirs("./temp/results/")
-    os.makedirs("./temp/prompts/",exist_ok=True)
-    os.makedirs("./temp/prompts/", exist_ok=True)
-    copy_folder('./examples/EasySAT/original_EasySAT', args.batch_size, mode='eval', target_folder="./temp/EasySAT/")
-    clean_files(folder_path="./temp/EasySAT/", mode="exe")
-    copy_folder("./temp/EasySAT/", args.batch_size)
+        os.makedirs(results_folder)
+    copy_folder('./examples/EasySAT/original_EasySAT', args.batch_size, mode='eval', target_folder=easy_sat_folder)
+    clean_files(folder_path=easy_sat_folder, mode="exe")
+    copy_folder(easy_sat_folder, args.batch_size)
     return
 
 def check_reIteration(round, best_result_dict, baseline):

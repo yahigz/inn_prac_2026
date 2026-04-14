@@ -60,17 +60,17 @@ char *read_int(char *p, int *i) {                           // Aid function for 
     return p;
 }
 
-int Solver::add_clause(std::vector<int> &c) {                   
+int Solver::add_clause(std::vector<int> &c) {
     clause_DB.push_back(Clause(c.size()));                          // Add a clause c into database.
     int id = clause_DB.size() - 1;                                  // Getting clause index.
     for (int i = 0; i < (int)c.size(); i++) clause_DB[id][i] = c[i];     // Copy literals
     watch(-c[0]).push_back(Watcher(id, c[1]));                      // Watch this clause by literal -c[0]
     watch(-c[1]).push_back(Watcher(id, c[0]));                      // Watch this clause by literal -c[1]
-    return id;                                                      
+    return id;
 }
 
 int Solver::parse(char *filename) {
-    std::ifstream fin(filename);                                    // Fast load begin                                 
+    std::ifstream fin(filename);                                    // Fast load begin
     fin.seekg(0, fin.end);
     size_t file_len = fin.tellg();
 	fin.seekg(0, fin.beg);
@@ -87,10 +87,10 @@ int Solver::parse(char *filename) {
             if (*(p + 1) == ' ' && *(p + 2) == 'c' && *(p + 3) == 'n' && *(p + 4) == 'f') {
                 p += 5, p = read_int(p, &vars), p = read_int(p, &clauses);
                 alloc_memory();
-            } 
+            }
             else printf("PARSE ERROR! Unexpected char\n"), exit(2);                        // Wrong 'p ' line.
         }
-        else {                                                                             
+        else {
             int32_t dimacs_lit;
             p = read_int(p, &dimacs_lit);
             if (*p == '\0' && dimacs_lit != 0)                                              // Unexpected EOF
@@ -101,7 +101,7 @@ int Solver::parse(char *filename) {
                 if (buffer.size() == 1 && !value(buffer[0])) assign(buffer[0], 0, -1);      // Found an unit clause.
                 else if (buffer.size() > 1) add_clause(buffer);                             // Found a clause who has more than 1 literals.
                 buffer.clear();                                                             // For the next clause.
-            }       
+            }
             else buffer.push_back(dimacs_lit);                                              // read a literal
         }
     }
@@ -122,26 +122,31 @@ void Solver::alloc_memory() {
     fast_lbd_sum = lbd_queue_size = lbd_queue_pos = slow_lbd_sum = 0;
     var_inc = 1, rephase_limit = 1024, reduce_limit = 8192;
     vsids.setComp(GreaterActivity(activity));
-    for (int i = 1; i <= vars; i++) 
+    for (int i = 1; i <= vars; i++)
         value[i] = reason[i] = level[i] = mark[i] = local_best[i] = activity[i] = saved[i] = 0, vsids.insert(i);
 }
 
-''' and end with '''
+void Solver::bump_var(int var, double coeff) {
+    if ((activity[var] += var_inc * coeff) > 1e100) {           // Update score and prevent float overflow
+        for (int i = 1; i <= vars; i++) activity[i] *= 1e-100;
+        var_inc *= 1e-100;}
+    if (vsids.inHeap(var)) vsids.update(var);                 // update heap
+}
 
 void Solver::assign(int lit, int l, int cref) {
     int var = abs(lit);
     value[var]  = lit > 0 ? 1 : -1;
-    level[var]  = l, reason[var] = cref;                                         
+    level[var]  = l, reason[var] = cref;
     trail.push_back(lit);
 }
 
 int Solver::propagate() {
-    while (propagated < (int)trail.size()) { 
+    while (propagated < (int)trail.size()) {
         int p = trail[propagated++];                    // Pick an unpropagated literal in trail.
         std::vector<Watcher> &ws = watch(p);            // Fetch the watcher for this literal.
-        int i, j, size = ws.size();                     
-        for (i = j = 0; i < size; ) {               
-            int blocker = ws[i].blocker;                       
+        int i, j, size = ws.size();
+        for (i = j = 0; i < size; ) {
+            int blocker = ws[i].blocker;
             if (value(blocker) == 1) {                  // Pre-judge whether the clause is already SAT
                 ws[j++] = ws[i++]; continue;
             }
@@ -176,7 +181,7 @@ int Solver::propagate() {
 int Solver::analyze(int conflict, int &backtrackLevel, int &lbd) {
     ++time_stamp;
     learnt.clear();
-    Clause &c = clause_DB[conflict]; 
+    Clause &c = clause_DB[conflict];
     int highestLevel = level[abs(c[0])];
     if (highestLevel == 0) return 20;
     learnt.push_back(0);        // leave a place to save the First-UIP
@@ -206,7 +211,7 @@ int Solver::analyze(int conflict, int &backtrackLevel, int &lbd) {
     ++time_stamp, lbd = 0;
     for (int i = 0; i < (int)learnt.size(); i++) {   // Calculate the LBD.
         int l = level[abs(learnt[i])];
-        if (l && mark[l] != time_stamp) 
+        if (l && mark[l] != time_stamp)
             mark[l] = time_stamp, ++lbd;
     }
     if (lbd_queue_size < 50) lbd_queue_size++;       // update fast-slow.
@@ -231,7 +236,7 @@ void Solver::backtrack(int backtrackLevel) {
     if ((int)pos_in_trail.size() <= backtrackLevel) return;
     for (int i = trail.size() - 1; i >= pos_in_trail[backtrackLevel]; i--) {
         int v = abs(trail[i]);
-        value[v] = 0, saved[v] = trail[i] > 0 ? 1 : -1; // phase saving 
+        value[v] = 0, saved[v] = trail[i] > 0 ? 1 : -1; // phase saving
         if (!vsids.inHeap(v)) vsids.insert(v);          // update heap
     }
     propagated = pos_in_trail[backtrackLevel];
@@ -239,7 +244,7 @@ void Solver::backtrack(int backtrackLevel) {
     pos_in_trail.resize(backtrackLevel);
 }
 
-int Solver::decide() {      
+int Solver::decide() {
     int next = -1;
     while (next == -1 || value(next) != 0) {    // Picking a variable according to VSIDS
         if (vsids.empty()) return 10;
@@ -264,12 +269,6 @@ void Solver::restart() {
 
 void Solver::rephase() {
     rephases = 0, threshold *= 0.9, rephase_limit += 8192;
-        // Random rephasing: Flip the value of each variable with a 50% chance.
-    for (int i = 1; i <= vars; i++) {
-        if (rand() % 2) {
-            saved[i] = -saved[i]; // Flip the phase of the variable.
-        }
-    }
 }
 
 void Solver::reduce() {
@@ -307,7 +306,7 @@ int Solver::solve() {
     while (!res) {
         auto end_time = std::chrono::high_resolution_clock::now();
         auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(end_time - start_time).count();
-        if (duration > 5  * 1000) {
+        if (duration > 5000 * 1000) {
             res = 30;
             break;
         }
@@ -346,7 +345,7 @@ void Solver::printModel() {
 }
 
 int main(int argc, char **argv) {
-    std::string folderPath = "../../datasets/mini/train";
+    std::string folderPath = "../../datasets/mini_v2/train";
     std::string save_results = "./temp/results/" + std::string(argv[1]) + "_" + std::string(argv[3]) + ".txt";
     int K_procession = std::stoi(argv[2]);
     int current_num_procession = std::stoi(argv[3]);

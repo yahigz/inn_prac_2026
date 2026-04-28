@@ -122,4 +122,10 @@ if __name__ == '__main__':
             for key, value in config.items():
                 setattr(args, key, value)
 
-    evaluate(args,method_name=args.method_name,SAT_solver_file_path=args.SAT_solver_file_path)
+    try:
+        evaluate(args,method_name=args.method_name,SAT_solver_file_path=args.SAT_solver_file_path)
+    except KeyboardInterrupt:
+        ExecutionWorker.shutdown_all()
+        raise
+    finally:
+        ExecutionWorker.shutdown_all()

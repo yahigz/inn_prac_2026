@@ -1,23 +1,41 @@
 # HOWTO: запуск AutoSAT в этом репозитории
 
+
 Этот файл описывает рабочий путь запуска с учетом текущих изменений в проекте:
 - запуск на Linux;
 - работа через OpenAI-compatible API (DeepInfra);
-- мини-датасет `mini_v2`;
+- поддержка нескольких датасетов:
+  - мини-датасет `mini_v2`;
+  - SAT20: `sat20_cnfs`;
+  - Zamkeller;
+  - cryptography-ascon;
 - логирование расхода токенов;
 - checkpoint/resume через конфиг;
 - ретраи при временных ошибках API;
 - запуск в фоне через `nohup`.
 - каждый запуск получает свой `run_id`, поэтому артефакты не перетираются.
 
+
 ## 1. Что уже подготовлено
 
-- Датасеты распакованы в `datasets/`.
-- Текущий мини-датасет: `datasets/mini_v2/`
-  - `datasets/mini_v2/train`
-  - `datasets/mini_v2/eval`
-- В `mini_v2` добавлены 20 самых маленьких инстансов из `Zamkeller`, которые отсутствовали в наборе.
+- Датасеты распакованы в папку `datasets/`.
+- Поддерживаемые датасеты:
+  - Мини-датасет: `datasets/mini_v2/`
+    - `datasets/mini_v2/train`
+    - `datasets/mini_v2/eval`
+    - Включает 20 самых маленьких инстансов из Zamkeller, которых не было в оригинале.
+  - SAT20: `datasets/sat20_cnfs/`
+    - Оригинальные CNF-файлы SAT20 (используются для крупных тестов и бенчмарков).
+  - Zamkeller: `datasets/Zamkeller/`
+    - `datasets/Zamkeller/train`
+    - `datasets/Zamkeller/eval`
+    - Альтернативный набор для тестирования и расширения.
+  - cryptography-ascon: `datasets/cryptography-ascon/`
+    - `datasets/cryptography-ascon/train`
+    - `datasets/cryptography-ascon/eval`
+    - Используется для экспериментов с криптографическими задачами.
 - Мини-конфиг: `AutoSAT_v1/AutoSAT/config.mini.yaml`
+- Примеры конфигов для SAT20 и других датасетов: `AutoSAT_v1/AutoSAT/config.sat20_combined.train4func.yaml`, `config.sat20_small.train4func.yaml` и др.
 - Git игнорирует тяжелые файлы через `.gitignore`:
   - `datasets/`
   - `AutoSAT_v1/AutoSAT/temp/`
@@ -49,44 +67,70 @@ python -m pip install "setuptools<81"
 
 Это нужно из-за `pkg_resources`, который использует текущая версия `ray`.
 
+
 ## 3. Настройка `.env`
 
-Файл `.env` лежит в корне репозитория (`autosat/.env`) и автоматически подхватывается из `main_MultiAgent.py`.
+Файл `.env` должен лежать в корне репозитория (`autosat/.env`) и автоматически подхватывается при запуске.
 
-Нужные переменные:
+**Обязательно пропишите свой API-ключ!**
+
+Пример содержимого `.env`:
 
 ```env
+# Модель для LLM (обязательно)
 DEEPINFRA_MODEL="openai/gpt-oss-120b"
+# Базовый URL для DeepInfra (обязательно)
 DEEPINFRA_API_BASE="https://api.deepinfra.com/v1/openai"
+# Ваш API-ключ (обязательно!)
 DEEPINFRA_API_KEY="<YOUR_KEY>"
 ```
 
-Важно:
+**Важно:**
+- `DEEPINFRA_API_KEY` — сюда нужно вписать ваш персональный ключ доступа к DeepInfra API. Без него ничего не заработает!
 - `DEEPINFRA_API_BASE` должен быть **base URL**, а не полный endpoint.
-- Неправильно: `.../chat/completions`
-- Правильно: `https://api.deepinfra.com/v1/openai`
+  - Неправильно: `.../chat/completions`
+  - Правильно: `https://api.deepinfra.com/v1/openai`
+- Модель должна быть совместима с OpenAI API (например, `openai/gpt-oss-120b`).
 
 Почему так: библиотека OpenAI сама добавляет нужный путь API.
 
-## 4. Мини-запуск обучения
+
+## 4. Примеры запуска обучения и оценки
 
 Из папки `AutoSAT_v1/AutoSAT`:
 
+### Мини-датасет (mini_v2)
 ```bash
 python3 main.py --config ./config.mini.yaml
 ```
 
-Текущие параметры мини-конфига (`AutoSAT_v1/AutoSAT/config.mini.yaml`):
-- `iteration_num: 60`
-- `batch_size: 1`
-- `data_parallel_size: 6`
-- `data_dir: ../../datasets/mini_v2/train`
-- `eval_data_dir: ../../datasets/mini_v2/eval`
-- `llm_model: openai/gpt-oss-120b`
-- `resume_from_checkpoint: true`
-- `run_id: ""`
-- `checkpoint_dir: ./results/checkpoints`
-- `checkpoint_path: ""`
+### SAT20 (пример)
+```bash
+python3 main.py --config ./config.sat20_combined.train4func.yaml
+```
+
+### Zamkeller (пример)
+```bash
+python3 main.py --config ./config.zamkeller.yaml
+```
+
+### cryptography-ascon (пример)
+```bash
+python3 main.py --config ./config.cryptography_ascon.yaml
+```
+
+#### Пример путей в конфиге для разных датасетов:
+
+```yaml
+data_dir: ../../datasets/sat20_cnfs/
+eval_data_dir: ../../datasets/sat20_cnfs/
+# или
+data_dir: ../../datasets/Zamkeller/train
+eval_data_dir: ../../datasets/Zamkeller/eval
+# или
+data_dir: ../../datasets/cryptography-ascon/train
+eval_data_dir: ../../datasets/cryptography-ascon/eval
+```
 
 Если `run_id` пустой, он генерируется автоматически при старте.
 Если нужно продолжить старый запуск, укажи тот же `run_id` или конкретный `checkpoint_path`.
@@ -122,6 +166,7 @@ checkpoint_path: "./results/checkpoints/iter_12_checkpoint.json"
 
 ## 6. Как читать вывод
 
+
 ### Базовые метрики
 - `Backbone(original) result -- time: X seconds ; PAR-2: Y`
 
@@ -135,6 +180,22 @@ checkpoint_path: "./results/checkpoints/iter_12_checkpoint.json"
 - `PAR-2(candidate) < PAR-2(baseline)`
 
 Именно такие кандидаты идут в дополнительный eval.
+
+### Проверка размера датасетов
+
+```bash
+# mini_v2
+find datasets/mini_v2/train -type f -name '*.cnf' | wc -l
+find datasets/mini_v2/eval -type f -name '*.cnf' | wc -l
+# SAT20
+find datasets/sat20_cnfs/ -type f -name '*.cnf' | wc -l
+# Zamkeller
+find datasets/Zamkeller/train -type f -name '*.cnf' | wc -l
+find datasets/Zamkeller/eval -type f -name '*.cnf' | wc -l
+# cryptography-ascon
+find datasets/cryptography-ascon/train -type f -name '*.cnf' | wc -l
+find datasets/cryptography-ascon/eval -type f -name '*.cnf' | wc -l
+```
 
 ### Расход токенов
 В логах есть строки:
@@ -241,11 +302,14 @@ find datasets/mini_v2/train -type f -name '*.cnf' | wc -l
 find datasets/mini_v2/eval -type f -name '*.cnf' | wc -l
 ```
 
+
 Запустить eval отдельно:
 
 ```bash
 cd AutoSAT_v1/AutoSAT
 python evaluate.py --config ./examples/EasySAT/eval_config.yaml
+# или для кастомного датасета/конфига:
+python evaluate.py --config ./config.sat20_combined.train4func.yaml
 ```
 
-(Для отдельного eval проверь пути к solver/data в конфиге.)
+(Для отдельного eval проверьте пути к solver/data в конфиге — они должны указывать на нужный датасет и solver.)

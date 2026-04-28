@@ -14,7 +14,11 @@ def _run_id():
 def _run_root(base_dir):
     run_id = _run_id()
     if run_id:
-        return os.path.join(base_dir, "runs", run_id)
+        root = os.path.join(base_dir, "runs", run_id)
+        task_namespace = (os.getenv("AUTOSAT_TASK_NAMESPACE") or "").strip().strip('/')
+        if task_namespace:
+            root = os.path.join(root, task_namespace)
+        return root
     return base_dir
 
 
@@ -50,6 +54,15 @@ def revise_file(file_name, save_dir, *args, **kwargs):
                                 (1) `SAT_solver_file_path` is located within the current working directory, `./` 
                                 (2) `SAT_solver_file_path` should be a relative path. ''')
     output = template.render(*args, **kwargs)
+
+    timeout_value = kwargs.get('timeout', None)
+    if timeout_value is not None:
+        output = re.sub(r"\{\{\s*timeout\s*\}\}", str(timeout_value), output)
+
+    data_dir_value = kwargs.get('data_dir', None)
+    if data_dir_value is not None:
+        output = re.sub(r"\{\{\s*data_dir\s*\}\}", str(data_dir_value), output)
+
     with open(save_dir, 'w') as f:
         f.write(output)
 

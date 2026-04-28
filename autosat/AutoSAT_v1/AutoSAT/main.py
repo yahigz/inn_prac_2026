@@ -3,14 +3,14 @@ import argparse
 import json
 import time
 import uuid
+import random
 import yaml
 import ray
 import re
 import sys
 import glob
+import signal
 from pathlib import Path
-
-from jinja2 import FileSystemLoader, Environment
 
 from autosat.utils import get_code, revise_file, clean_files, collect_results, \
                             copy_folder, fill_core_codes, delete_InfiniteLoopInst, get_batch_id, train_init, check_reIteration
@@ -18,6 +18,102 @@ from autosat.llm_api.base_api import get_llm_api
 from autosat.execution.execution_worker import ExecutionWorker
 from autosat.evaluation.evaluate import evaluate
 import warnings
+
+
+_SHUTDOWN_IN_PROGRESS = False
+
+
+def _graceful_shutdown(reason="", exit_code=None):
+    global _SHUTDOWN_IN_PROGRESS
+    if _SHUTDOWN_IN_PROGRESS:
+        if exit_code is not None:
+            os._exit(int(exit_code))
+        return
+    _SHUTDOWN_IN_PROGRESS = True
+    try:
+        if reason:
+            print(f"[Shutdown] {reason}", flush=True)
+        ExecutionWorker.shutdown_all(timeout=2)
+    except Exception:
+        pass
+    try:
+        ray.shutdown()
+    except Exception:
+        pass
+    try:
+        if os.name == 'posix':
+            import subprocess
+            patterns = ['EasySAT', 'SAT_Solver_tmp', 'raylet', 'gcs_server', 'plasma_store', 'ray::']
+            for pattern in patterns:
+                subprocess.run(['pkill', '-TERM', '-f', pattern], check=False, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True, timeout=2)
+            for pattern in patterns:
+                subprocess.run(['pkill', '-KILL', '-f', pattern], check=False, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True, timeout=2)
+            subprocess.run(['ray', 'stop', '--force'], check=False, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True, timeout=5)
+    except Exception:
+        pass
+    finally:
+        if exit_code is not None:
+            os._exit(int(exit_code))
+
+
+TASK_ALIASES = {}
+
+DEFAULT_TASKS = {
+    "restart_condition",
+    "restart_function",
+    "bump_var_function",
+    "rephase_function",
+}
+
+
+def _discover_available_tasks(project):
+    project_name = str(project or "EasySAT/").strip().strip('/')
+    root = Path("./examples") / project_name
+    discovered = set()
+    if root.exists() and root.is_dir():
+        for entry in root.iterdir():
+            if not entry.is_dir():
+                continue
+            if (entry / "original_prompt.txt").exists() and (entry / "feedback_prompt.txt").exists():
+                discovered.add(entry.name)
+    return discovered or set(DEFAULT_TASKS)
+
+
+def _normalize_task_name(task_name, allowed_tasks):
+    task_name = str(task_name or "").strip()
+    task_name = task_name.strip('/')
+    task_name = TASK_ALIASES.get(task_name, task_name)
+    if task_name not in allowed_tasks:
+        raise ValueError(f"Unsupported task: {task_name}. Supported: {sorted(allowed_tasks)}")
+    return task_name
+
+
+def _resolve_task_sequence(args, allowed_tasks):
+    raw_tasks = getattr(args, "optimize_tasks", None)
+    if not raw_tasks:
+        fallback_task = getattr(args, "task", "bump_var_function")
+        return [_normalize_task_name(fallback_task, allowed_tasks)]
+
+    if isinstance(raw_tasks, str):
+        candidates = [part.strip() for part in raw_tasks.split(',') if part.strip()]
+    elif isinstance(raw_tasks, (list, tuple, set)):
+        candidates = [str(part).strip() for part in raw_tasks if str(part).strip()]
+    else:
+        candidates = [str(raw_tasks).strip()]
+
+    normalized = []
+    seen = set()
+    for candidate in candidates:
+        task_name = _normalize_task_name(candidate, allowed_tasks)
+        if task_name in seen:
+            continue
+        normalized.append(task_name)
+        seen.add(task_name)
+    return normalized
+
+
+def _run_task_sequence(args):
+    main(args)
 
 
 def _enable_realtime_output():
@@ -28,6 +124,52 @@ def _enable_realtime_output():
         pass
 
 
+def _maybe_run_baseline_eval(args):
+    baseline_solver_path = str(getattr(args, "SAT_solver_file_path", "") or "").strip()
+    if not baseline_solver_path:
+        baseline_solver_path = './examples/EasySAT/original_EasySAT/EasySAT.cpp'
+    baseline_method_name = f"baseline_{args.task}_{args.llm_model}".replace('/', '')
+    existing_baseline_eval = glob.glob(os.path.join(args.results_save_path, f"results_{baseline_method_name}_*.txt"))
+    if existing_baseline_eval:
+        print(f"[Eval] Skip baseline: already evaluated ({len(existing_baseline_eval)} file(s)).", flush=True)
+        return
+    print(f"[Eval] Run baseline: {baseline_method_name}", flush=True)
+    evaluate(args, method_name=baseline_method_name, SAT_solver_file_path=baseline_solver_path)
+
+
+def _select_task_for_run(args):
+    available_tasks = _discover_available_tasks(getattr(args, "project", "EasySAT/"))
+    task_sequence = _resolve_task_sequence(args, available_tasks)
+    if not task_sequence:
+        raise ValueError("No optimize_tasks resolved for run")
+
+    selection_mode = str(getattr(args, "task_selection_mode", "random_one") or "random_one").strip().lower()
+    if selection_mode not in {"random_one", "cycle", "sequential_all"}:
+        raise ValueError("task_selection_mode must be one of: random_one, cycle, sequential_all")
+
+    if selection_mode == "random_one":
+        rng = random.Random(int(getattr(args, "rand_seed", 42) or 42))
+        selected_task = rng.choice(task_sequence)
+    else:
+        selected_task = task_sequence[0]
+
+    args.task = selected_task
+    print(f"[TaskSelect] selected task={selected_task} from {task_sequence}", flush=True)
+
+
+def _task_for_iteration(task_sequence, selection_mode, iter_idx, rand_seed=42):
+    if not task_sequence:
+        raise ValueError("task_sequence must not be empty")
+
+    selection_mode = str(selection_mode or "random_one").strip().lower()
+    if selection_mode == "random_one":
+        rng = random.Random(int(rand_seed or 42))
+        return rng.choice(task_sequence)
+    if selection_mode in {"cycle", "sequential_all"}:
+        return task_sequence[iter_idx % len(task_sequence)]
+    raise ValueError("task_selection_mode must be one of: random_one, cycle, sequential_all")
+
+
 def _make_run_id(explicit_run_id=""):
     explicit_run_id = str(explicit_run_id or "").strip()
     if explicit_run_id:
@@ -35,9 +177,13 @@ def _make_run_id(explicit_run_id=""):
     return time.strftime("run_%Y%m%d_%H%M%S") + f"_{os.getpid()}_{uuid.uuid4().hex[:8]}"
 
 
-def _run_paths(run_id):
-    temp_root = Path("./temp/runs") / run_id
-    results_root = Path("./results/runs") / run_id
+def _run_paths(run_id, task_namespace=""):
+    base_temp_root = Path("./temp/runs") / run_id
+    base_results_root = Path("./results/runs") / run_id
+    task_namespace = str(task_namespace or "").strip().strip('/')
+
+    temp_root = base_temp_root / task_namespace if task_namespace else base_temp_root
+    results_root = base_results_root / task_namespace if task_namespace else base_results_root
     temp_results_dir = temp_root / "results"
     temp_prompts_dir = temp_root / "prompts"
     temp_easy_root = temp_root / "EasySAT"
@@ -48,6 +194,9 @@ def _run_paths(run_id):
         path.mkdir(parents=True, exist_ok=True)
     return {
         "run_id": run_id,
+        "base_temp_root": base_temp_root,
+        "base_results_root": base_results_root,
+        "task_namespace": task_namespace,
         "temp_root": temp_root,
         "temp_results_dir": temp_results_dir,
         "temp_prompts_dir": temp_prompts_dir,
@@ -257,9 +406,25 @@ def synchronized_executed(count, results, arguments, answer_code, *args, **kwarg
 
 def main(args):
     _enable_realtime_output()
+    available_tasks = _discover_available_tasks(getattr(args, "project", "EasySAT/"))
+    task_sequence = _resolve_task_sequence(args, available_tasks)
+    if not task_sequence:
+        raise ValueError("No optimize_tasks resolved for run")
+    selection_mode = str(getattr(args, "task_selection_mode", "random_one") or "random_one").strip().lower()
+    if selection_mode not in {"random_one", "cycle", "sequential_all"}:
+        raise ValueError("task_selection_mode must be one of: random_one, cycle, sequential_all")
+
+    selected_task = _task_for_iteration(task_sequence, selection_mode, 0, rand_seed=getattr(args, "rand_seed", 42))
+    args.task = selected_task
+    print(f"[TaskSelect] selected task={selected_task} from {task_sequence} mode={selection_mode}", flush=True)
     run_id = _make_run_id(getattr(args, "run_id", ""))
     os.environ["AUTOSAT_RUN_ID"] = run_id
-    paths = _run_paths(run_id)
+    task_namespace = str(getattr(args, "task_namespace", "") or "").strip().strip('/')
+    if task_namespace:
+        os.environ["AUTOSAT_TASK_NAMESPACE"] = task_namespace
+    else:
+        os.environ.pop("AUTOSAT_TASK_NAMESPACE", None)
+    paths = _run_paths(run_id, task_namespace=task_namespace)
     args.run_id = run_id
     args.temp_root = str(paths["temp_root"])
     args.temp_results_dir = './temp/results/'
@@ -305,7 +470,7 @@ def main(args):
             if loaded_run_id and loaded_run_id != run_id:
                 run_id = loaded_run_id
                 os.environ["AUTOSAT_RUN_ID"] = run_id
-                paths = _run_paths(run_id)
+                paths = _run_paths(run_id, task_namespace=task_namespace)
                 args.run_id = run_id
                 args.temp_root = str(paths["temp_root"])
                 args.temp_results_dir = str(paths["temp_results_dir"])
@@ -325,16 +490,19 @@ def main(args):
             resumed = True
             print(f"[Checkpoint] Resumed from iteration {start_iter}.", flush=True)
 
+    baseline_initialized_now = False
+    baseline_executed_now = False
     if (not resumed) or ("0" not in results.get("time", {})):
         train_init(args)
 
-        env = Environment(loader=FileSystemLoader(os.path.join("./examples/", project_dir)))
-        template = env.get_template("EasySAT_original.cpp") # we set `EasySAT` as baseline here, you can replace with yours
-        output = template.render(timeout=args.timeout, data_dir="\"{}\"".format(args.data_dir))
         baseline_cpp = os.path.join(args.temp_root, f"EasySAT_{count}", "EasySAT.cpp")
         _ensure_parent_dir(baseline_cpp)
-        with open(baseline_cpp, 'w') as f:
-            f.write(output)
+        revise_file(
+            file_name=os.path.join("./examples/", project_dir, "EasySAT_original.cpp"),
+            save_dir=baseline_cpp,
+            timeout=args.timeout,
+            data_dir="\"{}\"".format(args.data_dir),
+        )
 
         if args.original:
             success = execution_worker.execute_original(count, args.data_parallel_size)
@@ -351,17 +519,32 @@ def main(args):
                                                            repetition_dict={},
                                                            results={},
                                                            args=args)
+                    baseline_executed_now = True
                     break
         else:
             results["time"]["0"] = args.original_result['time']
             results["prompt"]["0"] = " "
             results["PAR-2"]["0"] = args.original_result['PAR-2']
+        baseline_initialized_now = True
     else:
         if not os.path.exists(os.path.join(args.temp_root, "EasySAT_0")):
             train_init(args)
-    print("EasySAT(baseline) result-- time: {} seconds ; PAR-2: {}".format(results["time"]["0"], results["PAR-2"]["0"]), flush=True)
+    if baseline_initialized_now and baseline_executed_now:
+        print("EasySAT(baseline) result-- time: {} seconds ; PAR-2: {}".format(results["time"]["0"], results["PAR-2"]["0"]), flush=True)
 
-    for i in range(start_iter, args.iteration_num):
+    start_iter_override = getattr(args, "start_iter_override", None)
+    end_iter_override = getattr(args, "end_iter_override", None)
+    loop_start = start_iter if start_iter_override is None else int(start_iter_override)
+    loop_end = int(args.iteration_num) if end_iter_override is None else int(end_iter_override)
+    if loop_end < loop_start:
+        loop_end = loop_start
+
+    result = {}  # Initialize result to avoid UnboundLocalError
+
+    for i in range(loop_start, loop_end):
+        current_task = _task_for_iteration(task_sequence, selection_mode, i, rand_seed=getattr(args, "rand_seed", 42))
+        args.task = current_task
+        project_dir = os.path.join(args.project, current_task)
         # clean temp results
         clean_files(folder_path=args.temp_results_dir, mode="all")
         id_list = []
@@ -373,20 +556,25 @@ def main(args):
             # restart at iteration-1 if necessary..
             prompt_file_dir = os.path.join("./examples/", project_dir, "original_prompt.txt")
         else:
-            result_prompt = [
-                f"Experiment {num}, Your provided {args.project}--{args.task}: \n'''{result['prompt'][value[0]]}''', \n execution time is {result['time'][value[0]]} seconds. PAR-2 ( Penalized Average Runtime with factor 2) is {result['PAR-2'][value[0]]} seconds. "
-                for num, value in enumerate(result["time"].items())]
-            result_prompt = '\n '.join(result_prompt)
-            print("iteration: ", i, "\n results_prompt: \n", result_prompt, flush=True)
+            if result and "time" in result and len(result["time"]) > 0:
+                result_prompt = [
+                    f"Experiment {num}, Your provided {args.project}--{args.task}: \n'''{result['prompt'][value[0]]}''', \n execution time is {result['time'][value[0]]} seconds. PAR-2 ( Penalized Average Runtime with factor 2) is {result['PAR-2'][value[0]]} seconds. "
+                    for num, value in enumerate(result["time"].items())]
+                result_prompt = '\n '.join(result_prompt)
+                print("iteration: ", i, "\n results_prompt: \n", result_prompt, flush=True)
 
-            # Add the result matrix into next round prompt.
-            revise_file(file_name= os.path.join("./examples/", project_dir, "feedback_prompt.txt"),
-                        save_dir=os.path.join(args.temp_prompts_dir, 'feedback_prompt.txt'),
-                        replace_code=result_prompt,
-                        original_time=int(results["time"]["0"]),
-                        best_code=list(best_result.values())[0][1]
-                        )
-            prompt_file_dir = os.path.join(args.temp_prompts_dir, 'feedback_prompt.txt')
+                # Add the result matrix into next round prompt.
+                revise_file(file_name= os.path.join("./examples/", project_dir, "feedback_prompt.txt"),
+                            save_dir=os.path.join(args.temp_prompts_dir, 'feedback_prompt.txt'),
+                            replace_code=result_prompt,
+                            original_time=int(results["time"]["0"]),
+                            best_code=list(best_result.values())[0][1]
+                            )
+                prompt_file_dir = os.path.join(args.temp_prompts_dir, 'feedback_prompt.txt')
+            else:
+                # No valid result from previous iteration, restart from original prompt
+                print("iteration: ", i, " (no valid results from previous iteration, using original prompt)", flush=True)
+                prompt_file_dir = os.path.join("./examples/", project_dir, "original_prompt.txt")
 
         start_time = time.time()
         answer_code_cur_round = {}
@@ -503,23 +691,24 @@ def main(args):
     ray.shutdown()
 
     # Add evaluation 3.1
+    if not bool(getattr(args, "run_eval", True)):
+        print("skip evaluation for this step (run_eval=False)", flush=True)
+        return
+
     print('start evaluation ...', flush=True)
     if os.path.exists(args.temp_results_dir):
         clean_files(folder_path=args.temp_results_dir, mode="all")
     baseline = results["PAR-2"]["0"]
     record_info = []
-    print('EasySAT baseline : {}'.format(baseline), flush=True)
-
-    baseline_solver_path = str(getattr(args, "SAT_solver_file_path", "") or "").strip()
-    if not baseline_solver_path:
-        baseline_solver_path = './examples/EasySAT/original_EasySAT/EasySAT.cpp'
-    baseline_method_name = f"baseline_{args.task}_{args.llm_model}".replace('/', '')
-    existing_baseline_eval = glob.glob(os.path.join(args.results_save_path, f"results_{baseline_method_name}_*.txt"))
-    if existing_baseline_eval:
-        print(f"[Eval] Skip baseline: already evaluated ({len(existing_baseline_eval)} file(s)).", flush=True)
+    if bool(getattr(args, "original", False)):
+        print('EasySAT baseline : {}'.format(baseline), flush=True)
     else:
-        print(f"[Eval] Run baseline: {baseline_method_name}", flush=True)
-        evaluate(args, method_name=baseline_method_name, SAT_solver_file_path=baseline_solver_path)
+        print('[Eval] Baseline threshold from config original_result (PAR-2): {}'.format(baseline), flush=True)
+
+    if bool(getattr(args, "eval_baseline", True)):
+        _maybe_run_baseline_eval(args)
+    else:
+        print("[Eval] Baseline evaluation disabled by config.", flush=True)
 
     for global_id_str in final.keys():
         global_id = int(global_id_str)
@@ -566,8 +755,9 @@ if __name__ == '__main__':
     parser.add_argument('--project', type=str, default="EasySAT/")
     parser.add_argument('--task',
                         type=str,
-                        default="bump_var_function",
-                        choices=["restart_condition", "restart_function", "bump_var_function", "rephase_function"])
+                        default="bump_var_function")
+    parser.add_argument('--optimize_tasks', nargs='*', default=None)
+    parser.add_argument('--task_selection_mode', type=str, default='random_one')
 
     parser.add_argument('--original', type=bool, default=False)
 
@@ -577,6 +767,10 @@ if __name__ == '__main__':
     parser.add_argument('--checkpoint_dir', type=str, default='./results/checkpoints')
     parser.add_argument('--checkpoint_path', type=str, default='')
     parser.add_argument('--run_id', type=str, default='')
+    parser.add_argument('--run_eval', type=bool, default=True)
+    parser.add_argument('--eval_baseline', type=bool, default=True)
+    parser.add_argument('--start_iter_override', type=int, default=None)
+    parser.add_argument('--end_iter_override', type=int, default=None)
 
     args = parser.parse_args()
 
@@ -588,5 +782,17 @@ if __name__ == '__main__':
 
     args = _apply_env_overrides(args)
 
-    main(args)
+    def _signal_handler(signum, frame):
+        _graceful_shutdown(f"Signal received: {signum}", exit_code=128 + int(signum))
+
+    signal.signal(signal.SIGINT, _signal_handler)
+    signal.signal(signal.SIGTERM, _signal_handler)
+
+    try:
+        main(args)
+    except KeyboardInterrupt:
+        _graceful_shutdown("KeyboardInterrupt", exit_code=130)
+        raise
+    finally:
+        _graceful_shutdown("Process exit")
 

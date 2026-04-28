@@ -1,0 +1,26 @@
+eval_only_from_run: true
+run_id: "run_20260422_204845_2349603_e7050283"
+
+eval_data_dir: "../../datasets/cryptography-ascon/eval"
+eval_parallel_size: 6
+results_save_path: './temp/eval_results/'
+
+project: "EasySAT/"
+optimize_tasks:
+  - "bump_var_function"
+  - "restart_condition"
+  - "restart_function"
+  - "rephase_function"
+task_selection_mode: "cycle"
+original: true
+original_result: {'time': 0, 'PAR-2': 1}
+eval_baseline: true
+
+SAT_solver_file_path: './examples/EasySAT/original_EasySAT/EasySAT.cpp'
+model_name: 'deepseek-ai/DeepSeek-V3.2'
+llm_model: "deepseek-ai/DeepSeek-V3.2"
+api_base: "https://api.deepinfra.com/v1/openai"
+api_key: ""
+timeout: 5000
+rand_seed: 42
+keep_intermediate_results: False

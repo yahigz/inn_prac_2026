@@ -14,6 +14,7 @@ task_selection_mode: "random_one"
 original: false
 original_result: {'time': 0, 'PAR-2': 1}
 eval_baseline: false
+eval_only_from_run: false
 run_id: ""
 resume_from_checkpoint: true
 checkpoint_dir: "./results/checkpoints"

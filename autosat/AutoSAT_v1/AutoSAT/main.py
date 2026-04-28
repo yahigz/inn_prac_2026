@@ -10,6 +10,7 @@ import re
 import sys
 import glob
 import signal
+import subprocess
 from pathlib import Path
 
 from autosat.utils import get_code, revise_file, clean_files, collect_results, \
@@ -124,17 +125,175 @@ def _enable_realtime_output():
         pass
 
 
-def _maybe_run_baseline_eval(args):
+def _infer_task_from_code(answer_code):
+    text = str(answer_code or "").strip()
+    match = re.search(r"void\s+Solver::([A-Za-z_]\w*)\s*\(", text)
+    if not match:
+        if "restart();" in text:
+            return "restart_condition"
+        return None
+    func_name = match.group(1)
+    if func_name == "restart":
+        return "restart_function"
+    if func_name == "rephase":
+        return "rephase_function"
+    if func_name == "bump_var":
+        return "bump_var_function"
+    return None
+
+
+def _load_run_eval_artifacts(results_root):
+    results_root = Path(results_root)
+    final_result_path = results_root / "final_result.json"
+    if not final_result_path.exists():
+        raise FileNotFoundError(f"Cannot find run results for eval: {final_result_path}")
+
+    with open(final_result_path, "r", encoding="utf-8") as f:
+        final = json.load(f)
+
+    checkpoint_path = results_root / "checkpoints" / "latest_checkpoint.json"
+    extra_params = {}
+    if checkpoint_path.exists():
+        with open(checkpoint_path, "r", encoding="utf-8") as f:
+            state = json.load(f)
+        extra_params = {str(k): v for k, v in state.get("extra_params", {}).items()}
+
+    return final, extra_params
+
+
+def _validate_filled_solver(source_cpp_path, candidate_label):
+    compile_out = Path(source_cpp_path).with_suffix(".compile_check")
+    cmd = ["g++", "-O3", "-Wall", "-std=c++17", source_cpp_path, "-o", str(compile_out)]
+    proc = subprocess.run(cmd, check=False, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
+    try:
+        if compile_out.exists():
+            compile_out.unlink()
+    except Exception:
+        pass
+    if proc.returncode == 0:
+        return True, ""
+    return False, (proc.stderr or proc.stdout or "").strip() or f"Compilation failed for {candidate_label}"
+
+
+def _maybe_run_baseline_eval_for_task(args, task_name):
     baseline_solver_path = str(getattr(args, "SAT_solver_file_path", "") or "").strip()
     if not baseline_solver_path:
         baseline_solver_path = './examples/EasySAT/original_EasySAT/EasySAT.cpp'
-    baseline_method_name = f"baseline_{args.task}_{args.llm_model}".replace('/', '')
+    baseline_method_name = f"baseline_{task_name}_{args.llm_model}".replace('/', '')
     existing_baseline_eval = glob.glob(os.path.join(args.results_save_path, f"results_{baseline_method_name}_*.txt"))
     if existing_baseline_eval:
-        print(f"[Eval] Skip baseline: already evaluated ({len(existing_baseline_eval)} file(s)).", flush=True)
+        print(f"[Eval] Skip baseline for {task_name}: already evaluated ({len(existing_baseline_eval)} file(s)).", flush=True)
         return
-    print(f"[Eval] Run baseline: {baseline_method_name}", flush=True)
-    evaluate(args, method_name=baseline_method_name, SAT_solver_file_path=baseline_solver_path)
+    print(f"[Eval] Run baseline for {task_name}: {baseline_method_name}", flush=True)
+    prev_task = getattr(args, "task", "")
+    try:
+        args.task = task_name
+        evaluate(args, method_name=baseline_method_name, SAT_solver_file_path=baseline_solver_path)
+    finally:
+        args.task = prev_task
+
+
+def _collect_eval_candidates(final, extra_params, baseline):
+    record_info = []
+    for global_id_str, item in final.items():
+        if global_id_str == "0":
+            continue
+        par_2 = item.get("PAR-2")
+        answer_code = item.get("prompt", "")
+        if par_2 is None or par_2 >= baseline:
+            continue
+        record_info.append((
+            int(global_id_str),
+            par_2,
+            answer_code,
+            extra_params.get(str(global_id_str), {}),
+        ))
+    record_info.sort(key=lambda x: x[1])
+    return record_info
+
+
+def _run_eval_stage(args, final, extra_params, fallback_task, paths):
+    print('start evaluation ...', flush=True)
+    if os.path.exists(args.temp_results_dir):
+        clean_files(folder_path=args.temp_results_dir, mode="all")
+
+    baseline = final["0"]["PAR-2"]
+    if bool(getattr(args, "original", False)):
+        print('EasySAT baseline : {}'.format(baseline), flush=True)
+    else:
+        print('[Eval] Baseline threshold from run result (PAR-2): {}'.format(baseline), flush=True)
+
+    record_info = _collect_eval_candidates(final, extra_params, baseline)
+    print("{} Files to evaluate...".format(len(record_info)), flush=True)
+    if len(record_info) == 0:
+        return
+
+    if bool(getattr(args, "eval_baseline", True)):
+        baseline_tasks = set()
+        for _, _, answer_code, _ in record_info:
+            task_name = _infer_task_from_code(answer_code) or fallback_task
+            if task_name:
+                baseline_tasks.add(task_name)
+        for task_name in sorted(baseline_tasks):
+            _maybe_run_baseline_eval_for_task(args, task_name)
+    else:
+        print("[Eval] Baseline evaluation disabled by config.", flush=True)
+
+    for idx, (global_id, par_2, answer_code, params_dict) in enumerate(record_info, start=1):
+        task_name = _infer_task_from_code(answer_code) or fallback_task
+        if not task_name:
+            warnings.warn(
+                f"[Eval] Skip candidate {global_id}: cannot infer heuristic target from generated code.",
+                category=UserWarning,
+                stacklevel=2,
+            )
+            continue
+        project_dir = os.path.join(args.project, task_name)
+        source_template = os.path.join("./examples/", project_dir, "EasySAT.cpp")
+        if not os.path.exists(source_template):
+            warnings.warn(
+                f"[Eval] Skip candidate {global_id}: task template not found for {task_name} ({source_template}).",
+                category=UserWarning,
+                stacklevel=2,
+            )
+            continue
+
+        method_name = f"{task_name}_{args.llm_model}_{global_id}".replace('/', '')
+        existing_eval = glob.glob(os.path.join(args.results_save_path, f"results_{method_name}_*.txt"))
+        if existing_eval:
+            print(f"[Eval] Skip {idx}/{len(record_info)} {method_name}: already evaluated ({len(existing_eval)} file(s)).", flush=True)
+            continue
+
+        print(f"[Eval] Run {idx}/{len(record_info)}: {method_name}", flush=True)
+        SAT_folder = os.path.join(args.temp_root, f'EasySAT_{method_name}')
+        copy_folder(src_folder=args.temp_easy_root, num=1, mode='eval', target_folder=SAT_folder)
+        SAT_solver_file_path = os.path.join(SAT_folder, 'EasySAT_modified.cpp')
+
+        fill_core_codes(
+            origin_file=source_template,
+            target_file=SAT_solver_file_path,
+            answer_code=answer_code,
+            **params_dict,
+        )
+        ok, compile_error = _validate_filled_solver(SAT_solver_file_path, method_name)
+        if not ok:
+            warnings.warn(
+                f"[Eval] Skip candidate {global_id} ({task_name}): compile check failed.\n{compile_error}",
+                category=UserWarning,
+                stacklevel=2,
+            )
+            continue
+
+        prev_task = getattr(args, "task", "")
+        try:
+            args.task = task_name
+            evaluate(args, method_name=method_name, SAT_solver_file_path=SAT_solver_file_path)
+        finally:
+            args.task = prev_task
+
+
+def _maybe_run_baseline_eval(args):
+    _maybe_run_baseline_eval_for_task(args, getattr(args, "task", ""))
 
 
 def _select_task_for_run(args):
@@ -406,6 +565,7 @@ def synchronized_executed(count, results, arguments, answer_code, *args, **kwarg
 
 def main(args):
     _enable_realtime_output()
+    eval_only_from_run = bool(getattr(args, "eval_only_from_run", False))
     available_tasks = _discover_available_tasks(getattr(args, "project", "EasySAT/"))
     task_sequence = _resolve_task_sequence(args, available_tasks)
     if not task_sequence:
@@ -436,6 +596,16 @@ def main(args):
     args.eval_results_dir = str(paths["eval_results_dir"])
     args.results_save_path = args.eval_results_dir
     os.makedirs(args.temp_results_dir, exist_ok=True)
+
+    if eval_only_from_run:
+        if not os.path.exists(args.temp_easy_root):
+            train_init(args)
+        final, extra_params = _load_run_eval_artifacts(args.results_root)
+        if "0" not in final:
+            raise ValueError(f"Baseline result with key '0' is missing in {args.results_root}/final_result.json")
+        _run_eval_stage(args, final, extra_params, fallback_task=selected_task, paths=paths)
+        return
+
     data_dir = args.data_dir
     data_num = len([f for f in os.listdir(data_dir) if os.path.isfile(os.path.join(data_dir, f))])
     if args.data_parallel_size > data_num:
@@ -690,53 +860,10 @@ def main(args):
 
     ray.shutdown()
 
-    # Add evaluation 3.1
     if not bool(getattr(args, "run_eval", True)):
         print("skip evaluation for this step (run_eval=False)", flush=True)
         return
-
-    print('start evaluation ...', flush=True)
-    if os.path.exists(args.temp_results_dir):
-        clean_files(folder_path=args.temp_results_dir, mode="all")
-    baseline = results["PAR-2"]["0"]
-    record_info = []
-    if bool(getattr(args, "original", False)):
-        print('EasySAT baseline : {}'.format(baseline), flush=True)
-    else:
-        print('[Eval] Baseline threshold from config original_result (PAR-2): {}'.format(baseline), flush=True)
-
-    if bool(getattr(args, "eval_baseline", True)):
-        _maybe_run_baseline_eval(args)
-    else:
-        print("[Eval] Baseline evaluation disabled by config.", flush=True)
-
-    for global_id_str in final.keys():
-        global_id = int(global_id_str)
-        if global_id_str != "0":
-            if final[global_id_str]["PAR-2"] < baseline:
-                record_info.append((global_id, final[global_id_str]["PAR-2"], final[global_id_str]["prompt"], extra_params[global_id]))
-    record_info.sort(key=lambda x: x[1])
-
-    print("{} Files to evaluate...".format(len(record_info)), flush=True)
-    if len(record_info) == 0:
-        return
-    for idx, (global_id, par_2, answer_code, params_dict) in enumerate(record_info, start=1):
-        method_name = f"{args.task}_{args.llm_model}_{global_id}".replace('/', '')  # algorithm identity
-        existing_eval = glob.glob(os.path.join(args.results_save_path, f"results_{method_name}_*.txt"))
-        if existing_eval:
-            print(f"[Eval] Skip {idx}/{len(record_info)} {method_name}: already evaluated ({len(existing_eval)} file(s)).", flush=True)
-            continue
-        print(f"[Eval] Run {idx}/{len(record_info)}: {method_name}", flush=True)
-        SAT_folder = os.path.join(args.temp_root, f'EasySAT_{method_name}')
-        copy_folder(src_folder=args.temp_easy_root, num=1, mode='eval', target_folder=SAT_folder)
-        SAT_solver_file_path = os.path.join(SAT_folder, 'EasySAT_modified.cpp')
-
-        # replace the answer code for the specific function and other auxiliary params such as `lbd size`
-        fill_core_codes(origin_file=os.path.join("./examples/", project_dir, "EasySAT.cpp"),
-                        target_file=SAT_solver_file_path,
-                        answer_code=answer_code,
-                        **params_dict)
-        evaluate(args, method_name=method_name, SAT_solver_file_path=SAT_solver_file_path)  # TODO check .. somtime can not delete dir..
+    _run_eval_stage(args, final, {str(k): v for k, v in extra_params.items()}, fallback_task=args.task, paths=paths)
 
 
 if __name__ == '__main__':
@@ -769,6 +896,7 @@ if __name__ == '__main__':
     parser.add_argument('--run_id', type=str, default='')
     parser.add_argument('--run_eval', type=bool, default=True)
     parser.add_argument('--eval_baseline', type=bool, default=True)
+    parser.add_argument('--eval_only_from_run', type=bool, default=False)
     parser.add_argument('--start_iter_override', type=int, default=None)
     parser.add_argument('--end_iter_override', type=int, default=None)
 
@@ -795,4 +923,3 @@ if __name__ == '__main__':
         raise
     finally:
         _graceful_shutdown("Process exit")
-

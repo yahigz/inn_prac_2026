@@ -1,3 +1,6 @@
+# Игнорировать архив проекта
+autosat_project_2026.tar.gz
+
 .env
 
 # Local datasets and heavy artifacts

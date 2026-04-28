@@ -20,3 +20,7 @@ AutoSAT_v1/AutoSAT/*.nohup.log
 **/*.so
 **/*.o
 
+# В .gitignore
+autosat/autosat_project_2026.tar.gz
+
+

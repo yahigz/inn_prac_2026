@@ -156,7 +156,7 @@ void Solver::alloc_memory() {
     saved       = new int[vars + 1];
     activity    = new double[vars + 1];
     watches     = new std::vector<Watcher>[vars * 2 + 1];
-    conflicts = time_stamp = propagated = restarts = rephases = reduces = threshold = 0;
+    conflicts = time_stamp = propagated = restarts = rephases = reduces = threshold = 0;    
     fast_lbd_sum = lbd_queue_size = lbd_queue_pos = slow_lbd_sum = 0;
     var_inc = 1, rephase_limit = 1024, reduce_limit = 8192;
     vsids.setComp(GreaterActivity(activity));

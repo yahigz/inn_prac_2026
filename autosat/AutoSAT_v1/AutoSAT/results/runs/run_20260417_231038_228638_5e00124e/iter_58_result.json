@@ -1,0 +1,20 @@
+{
+  "time": {
+    "59": 51378
+  },
+  "prompt": {
+    "59": "void Solver::restart() {\n    // Reset LBD statistics\n    fast_lbd_sum = 0;\n    lbd_queue_size = 0;\n    lbd_queue_pos = 0;\n\n    // Backtrack to root level\n    backtrack(0);\n\n    // Aggressive rephasing strategy\n    int phase_rand = rand() % 100;\n    if (conflicts > 5000) {\n        // For many conflicts, use completely random phases\n        for (int i = 1; i <= vars; ++i) {\n            saved[i] = (rand() & 1) ? 1 : -1;\n        }\n    } else if (phase_rand < 70) {\n        // Mostly keep the best local phase\n        for (int i = 1; i <= vars; ++i) {\n            saved[i] = local_best[i];\n        }\n    } else {\n        // Occasionally invert the best local phase\n        for (int i = 1; i <= vars; ++i) {\n            saved[i] = -local_best[i];\n        }\n    }\n\n    // Reset variable activity increment to avoid excessive decay\n    var_inc = 1.0;\n}"
+  },
+  "PAR-2": {
+    "59": 101378
+  },
+  "satisfiable": {
+    "59": 0
+  },
+  "unsatisfiable": {
+    "59": 2
+  },
+  "timeout": {
+    "59": 10
+  }
+}

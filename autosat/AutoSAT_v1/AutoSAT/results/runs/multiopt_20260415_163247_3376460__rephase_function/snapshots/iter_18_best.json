@@ -1,0 +1,7 @@
+{
+  "iter": 18,
+  "best_id": "19",
+  "time": 1734,
+  "code": "void Solver::rephase() {\n    // 1) Reset the rephase counter – we start a fresh re‑phase cycle.\n    rephases = 0;\n\n    // 2) Make the next re‑phase trigger a bit earlier.\n    //    Instead of a simple 0.9 factor we use a slightly stronger reduction\n    //    and also ensure the threshold never drops below a small constant.\n    threshold = std::max( (int)(threshold * 0.85), 100 );\n\n    // 3) Grow the re‑phase limit, but keep it bounded to avoid runaway growth.\n    //    The original code added a fixed 8192; we add a smaller step and cap it.\n    const int REPHASE_LIMIT_MAX = 200000;\n    rephase_limit = std::min( rephase_limit + 4096, REPHASE_LIMIT_MAX );\n\n    // 4) Refresh the saved phase information.\n    //    Use the best phase seen so far (local_best) but occasionally flip it\n    //    to inject diversification. This helps the solver escape from a bad\n    //    polarity bias after many restarts.\n    for (int v = 1; v <= vars; ++v) {\n        if (local_best[v] != 0) {\n            // 50 % chance to keep the best polarity, otherwise invert it.\n            saved[v] = (rand() & 1) ? local_best[v] : -local_best[v];\n        } else {\n            // If we have never seen a value for this variable, pick a random polarity.\n            saved[v] = (rand() & 1) ? 1 : -1;\n        }\n    }\n}",
+  "PAR-2": 1734
+}

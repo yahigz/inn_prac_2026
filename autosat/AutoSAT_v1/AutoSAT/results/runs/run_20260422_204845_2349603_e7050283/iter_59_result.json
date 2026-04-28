@@ -1,0 +1,20 @@
+{
+  "time": {
+    "60": 9157
+  },
+  "prompt": {
+    "60": "void Solver::rephase() {\n    rephases = 0;\n    threshold *= 0.85;\n    rephase_limit += 4096;\n    int phase_rand = rand() % 100;\n    if ((phase_rand -= 70) < 0) {\n        for (int i = 1; i <= vars; i++) saved[i] = local_best[i];\n    } else if ((phase_rand -= 15) < 0) {\n        for (int i = 1; i <= vars; i++) saved[i] = -local_best[i];\n    } else if ((phase_rand -= 10) < 0) {\n        for (int i = 1; i <= vars; i++) saved[i] = value[i];\n    } else {\n        for (int i = 1; i <= vars; i++) saved[i] = rand() % 2 ? 1 : -1;\n    }\n}"
+  },
+  "PAR-2": {
+    "60": 9157
+  },
+  "satisfiable": {
+    "60": 5
+  },
+  "unsatisfiable": {
+    "60": 7
+  },
+  "timeout": {
+    "60": 0
+  }
+}

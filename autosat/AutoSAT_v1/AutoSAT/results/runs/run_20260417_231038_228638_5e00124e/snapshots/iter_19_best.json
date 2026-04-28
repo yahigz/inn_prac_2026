@@ -1,0 +1,7 @@
+{
+  "iter": 19,
+  "best_id": "20",
+  "time": 10034,
+  "code": "void Solver::rephase() {\n    // 1. Reset the rephase counter – we have just performed a re‑phase.\n    rephases = 0;\n\n    // 2. Make the next re‑phase happen sooner:\n    //    shrink the trail‑size threshold a bit more aggressively than the original 0.9 factor.\n    threshold = static_cast<int>(threshold * 0.85);\n\n    // 3. Allow a few more re‑phases before the next trigger.\n    //    Grow the limit slowly (20 % increase) and add a small constant to avoid stagnation.\n    rephase_limit = static_cast<int>(rephase_limit * 1.2) + 1024;\n\n    // 4. Refresh the saved phase information.\n    //    - 60 % of the time keep the best local phase,\n    //    - 20 % of the time invert it,\n    //    - 20 % of the time pick a random polarity.\n    int r = rand() % 100;\n    if (r < 60) {\n        for (int i = 1; i <= vars; ++i) saved[i] = local_best[i];\n    } else if (r < 80) {\n        for (int i = 1; i <= vars; ++i) saved[i] = -local_best[i];\n    } else {\n        for (int i = 1; i <= vars; ++i) saved[i] = (rand() & 1) ? 1 : -1;\n    }\n\n    // 5. Reset the VSIDS increment to avoid floating‑point overflow and give a fresh start.\n    var_inc = 1.0;\n}",
+  "PAR-2": 10034
+}

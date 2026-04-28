@@ -1,0 +1,7 @@
+{
+  "iter": 3,
+  "best_id": "4",
+  "time": 2228,
+  "code": "void Solver::bump_var(int var, double coeff) {\n    // compute increment\n    double inc = var_inc * coeff;\n    activity[var] += inc;\n\n    // Rescale when a single activity becomes too large\n    const double ACT_LIMIT = 1e150;\n    const double SCALE = 1e-100;\n    if (activity[var] > ACT_LIMIT) {\n        for (int i = 1; i <= vars; ++i) activity[i] *= SCALE;\n        var_inc *= SCALE;\n    }\n\n    // Also keep var_inc itself bounded to avoid overflow in future increments\n    if (var_inc > ACT_LIMIT) {\n        for (int i = 1; i <= vars; ++i) activity[i] *= SCALE;\n        var_inc *= SCALE;\n    }\n\n    // update VSIDS heap if needed\n    if (vsids.inHeap(var)) vsids.update(var);\n}",
+  "PAR-2": 2228
+}

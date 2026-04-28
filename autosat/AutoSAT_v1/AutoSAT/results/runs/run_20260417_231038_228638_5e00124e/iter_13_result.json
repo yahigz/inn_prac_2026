@@ -1,0 +1,20 @@
+{
+  "time": {
+    "14": 46902
+  },
+  "prompt": {
+    "14": "else if (lbd_queue_size == 50 && conflicts > 500 && (fast_lbd_sum * 1.0 / lbd_queue_size) > 1.1 * (slow_lbd_sum / (conflicts + 1)) && (int)trail.size() > threshold) restart();"
+  },
+  "PAR-2": {
+    "14": 91902
+  },
+  "satisfiable": {
+    "14": 0
+  },
+  "unsatisfiable": {
+    "14": 3
+  },
+  "timeout": {
+    "14": 9
+  }
+}

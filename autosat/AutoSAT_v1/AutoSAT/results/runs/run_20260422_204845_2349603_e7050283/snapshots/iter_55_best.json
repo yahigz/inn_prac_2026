@@ -1,0 +1,7 @@
+{
+  "iter": 55,
+  "best_id": "56",
+  "time": 10660,
+  "code": "void Solver::rephase() {\n    rephases = 0;\n    threshold *= 0.85;  // Slightly more aggressive reduction to trigger rephasing more often\n    rephase_limit += 10240;  // Increase limit more to allow more rephases before restart\n    // Update saved phases based on current trail assignments to capture recent progress\n    for (int i = 1; i <= vars; i++) {\n        if (value[i] != 0) {\n            saved[i] = value[i];  // Use current assignment as preferred phase\n        }\n    }\n}",
+  "PAR-2": 10660
+}

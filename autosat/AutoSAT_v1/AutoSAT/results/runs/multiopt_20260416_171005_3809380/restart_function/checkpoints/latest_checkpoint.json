@@ -1,0 +1,44 @@
+{
+  "version": 1,
+  "run_id": "multiopt_20260416_171005_3809380",
+  "next_iter": 3,
+  "results": {
+    "time": {
+      "0": 0,
+      "3": 0
+    },
+    "prompt": {
+      "0": "",
+      "3": "void Solver::restart() {\n    // Aggressively reset LBD statistics\n    fast_lbd_sum = 0;\n    lbd_queue_size = 0;\n    lbd_queue_pos = 0;\n    for (int i = 0; i < 50; ++i) lbd_queue[i] = 0;\n\n    // Backtrack to root level\n    backtrack(0);\n\n    // Re‑phase variables with a mixed strategy\n    int mode = rand() % 100;\n    if (mode < 40) {\n        // Keep the best phase found so far\n        for (int i = 1; i <= vars; ++i) saved[i] = local_best[i];\n    } else if (mode < 70) {\n        // Invert the best phase\n        for (int i = 1; i <= vars; ++i) saved[i] = -local_best[i];\n    } else if (mode < 90) {\n        // Assign random polarity\n        for (int i = 1; i <= vars; ++i) saved[i] = (rand() & 1) ? 1 : -1;\n    } else {\n        // Bias towards variables with high activity\n        for (int i = 1; i <= vars; ++i) {\n            saved[i] = (activity[i] > 0.5 * var_inc) ? 1 : -1;\n        }\n    }\n}"
+    },
+    "PAR-2": {
+      "0": 0,
+      "3": 0
+    },
+    "satisfiable": {
+      "0": 0
+    },
+    "unsatisfiable": {
+      "0": 8
+    },
+    "timeout": {
+      "0": 0
+    }
+  },
+  "answers": {
+    "3": "void Solver::restart() {\n    // Aggressively reset LBD statistics\n    fast_lbd_sum = 0;\n    lbd_queue_size = 0;\n    lbd_queue_pos = 0;\n    for (int i = 0; i < 50; ++i) lbd_queue[i] = 0;\n\n    // Backtrack to root level\n    backtrack(0);\n\n    // Re‑phase variables with a mixed strategy\n    int mode = rand() % 100;\n    if (mode < 40) {\n        // Keep the best phase found so far\n        for (int i = 1; i <= vars; ++i) saved[i] = local_best[i];\n    } else if (mode < 70) {\n        // Invert the best phase\n        for (int i = 1; i <= vars; ++i) saved[i] = -local_best[i];\n    } else if (mode < 90) {\n        // Assign random polarity\n        for (int i = 1; i <= vars; ++i) saved[i] = (rand() & 1) ? 1 : -1;\n    } else {\n        // Bias towards variables with high activity\n        for (int i = 1; i <= vars; ++i) {\n            saved[i] = (activity[i] > 0.5 * var_inc) ? 1 : -1;\n        }\n    }\n}"
+  },
+  "extra_params": {
+    "3": {
+      "lbd_queue_size": "50"
+    }
+  },
+  "best_result": {
+    "3": [
+      0,
+      "void Solver::restart() {\n    // Aggressively reset LBD statistics\n    fast_lbd_sum = 0;\n    lbd_queue_size = 0;\n    lbd_queue_pos = 0;\n    for (int i = 0; i < 50; ++i) lbd_queue[i] = 0;\n\n    // Backtrack to root level\n    backtrack(0);\n\n    // Re‑phase variables with a mixed strategy\n    int mode = rand() % 100;\n    if (mode < 40) {\n        // Keep the best phase found so far\n        for (int i = 1; i <= vars; ++i) saved[i] = local_best[i];\n    } else if (mode < 70) {\n        // Invert the best phase\n        for (int i = 1; i <= vars; ++i) saved[i] = -local_best[i];\n    } else if (mode < 90) {\n        // Assign random polarity\n        for (int i = 1; i <= vars; ++i) saved[i] = (rand() & 1) ? 1 : -1;\n    } else {\n        // Bias towards variables with high activity\n        for (int i = 1; i <= vars; ++i) {\n            saved[i] = (activity[i] > 0.5 * var_inc) ? 1 : -1;\n        }\n    }\n}",
+      0
+    ]
+  },
+  "saved_at": 1776348707.724543
+}

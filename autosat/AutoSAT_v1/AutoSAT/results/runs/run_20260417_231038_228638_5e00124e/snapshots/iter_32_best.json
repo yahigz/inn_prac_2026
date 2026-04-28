@@ -1,0 +1,7 @@
+{
+  "iter": 32,
+  "best_id": "33",
+  "time": 8391,
+  "code": "void Solver::bump_var(int var, double coeff) {\n    // Increment activity with the given coefficient.\n    double inc = var_inc * coeff;\n    activity[var] += inc;\n\n    // Lazy rescaling: only when a single variable exceeds the threshold.\n    // This avoids the costly full‑scale loop on every call.\n    const double OVERFLOW_LIMIT = 1e100;\n    if (activity[var] > OVERFLOW_LIMIT) {\n        // Scale down all activities and the increment factor.\n        const double RESCALE_FACTOR = 1e-100;\n        for (int i = 1; i <= vars; ++i) {\n            activity[i] *= RESCALE_FACTOR;\n        }\n        var_inc *= RESCALE_FACTOR;\n    }\n\n    // Ensure the variable is present in the VSIDS heap and update its key.\n    if (vsids.inHeap(var)) {\n        vsids.update(var);\n    } else {\n        vsids.insert(var);\n    }\n}",
+  "PAR-2": 8391
+}

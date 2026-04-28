@@ -1,0 +1,20 @@
+{
+  "time": {
+    "55": 56966
+  },
+  "prompt": {
+    "55": "void Solver::restart() {\n    // Reset LBD statistics\n    fast_lbd_sum = 0;\n    slow_lbd_sum = 0;\n    lbd_queue_size = 0;\n    lbd_queue_pos = 0;\n\n    // Reset variable activities to avoid stale bias\n    for (int v = 1; v <= vars; ++v) {\n        activity[v] = 0.0;\n        if (!vsids.inHeap(v)) vsids.insert(v);\n        else vsids.update(v);\n    }\n    var_inc = 1.0; // reset activity increment\n\n    // Backtrack to root level\n    backtrack(0);\n\n    // Rephase variables with a new probability distribution\n    int r = rand() % 100;\n    if (r < 50) {\n        // Use the best local assignment found so far\n        for (int i = 1; i <= vars; ++i) saved[i] = local_best[i];\n    } else if (r < 70) {\n        // Use the opposite of the best local assignment\n        for (int i = 1; i <= vars; ++i) saved[i] = -local_best[i];\n    } else {\n        // Random phase assignment\n        for (int i = 1; i <= vars; ++i) saved[i] = (rand() & 1) ? 1 : -1;\n    }\n}"
+  },
+  "PAR-2": {
+    "55": 111966
+  },
+  "satisfiable": {
+    "55": 1
+  },
+  "unsatisfiable": {
+    "55": 0
+  },
+  "timeout": {
+    "55": 11
+  }
+}

@@ -1,0 +1,7 @@
+{
+  "iter": 47,
+  "best_id": "48",
+  "time": 9141,
+  "code": "void Solver::rephase() {\n    // Reset the rephase counter for the next cycle\n    rephases = 0;\n\n    // Make the next rephase trigger a bit earlier when the search goes deep\n    threshold = static_cast<int>(threshold * 0.85);\n\n    // Grow the rephase limit adaptively – the more conflicts we have seen,\n    // the larger the limit, but increase it gradually to avoid too‑frequent rephasing\n    rephase_limit += (conflicts / 1000 + 1) * 4096;\n\n    // ---- Phase‑saving strategy -----------------------------------------\n    // Mix three simple policies and pick one at random:\n    //   1) keep the best polarity seen so far (local_best)\n    //   2) invert the best polarity\n    //   3) assign a completely random polarity\n    int r = rand() % 100;\n    if (r < 40) {\n        // Use the best polarity observed so far\n        for (int i = 1; i <= vars; ++i) saved[i] = local_best[i];\n    } else if (r < 70) {\n        // Invert the best polarity to explore the opposite region\n        for (int i = 1; i <= vars; ++i) saved[i] = -local_best[i];\n    } else {\n        // Random polarity for diversification\n        for (int i = 1; i <= vars; ++i) saved[i] = (rand() & 1) ? 1 : -1;\n    }\n}",
+  "PAR-2": 9141
+}

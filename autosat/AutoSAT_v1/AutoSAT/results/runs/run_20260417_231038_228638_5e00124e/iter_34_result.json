@@ -1,0 +1,20 @@
+{
+  "time": {
+    "35": 51440
+  },
+  "prompt": {
+    "35": "void Solver::restart() {\n    // Reset LBD statistics\n    fast_lbd_sum = 0;\n    lbd_queue_size = 0;\n    lbd_queue_pos = 0;\n\n    // Backtrack to root level\n    backtrack(0);\n\n    // Reset activity scaling factor to avoid overflow and give fresh VSIDS scores\n    var_inc = 1.0;\n\n    // Rephase variables: alternate between random polarity and flipping previous saved polarity\n    int flip = (conflicts / 1000) % 2;  // change pattern every 1000 conflicts\n    for (int i = 1; i <= vars; ++i) {\n        if (flip) {\n            // Flip the previously saved polarity\n            saved[i] = -saved[i];\n        } else {\n            // Assign a fresh random polarity\n            saved[i] = (rand() % 2) ? 1 : -1;\n        }\n    }\n\n    // Reduce the restart threshold to keep the search space manageable\n    if (threshold > 200) threshold = threshold / 2;\n    else threshold = 200;\n}"
+  },
+  "PAR-2": {
+    "35": 101440
+  },
+  "satisfiable": {
+    "35": 0
+  },
+  "unsatisfiable": {
+    "35": 2
+  },
+  "timeout": {
+    "35": 10
+  }
+}

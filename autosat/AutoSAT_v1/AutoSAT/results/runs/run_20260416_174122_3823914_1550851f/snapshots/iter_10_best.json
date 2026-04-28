@@ -1,0 +1,7 @@
+{
+  "iter": 10,
+  "best_id": "11",
+  "time": 15455,
+  "code": "void Solver::bump_var(int var, double coeff) {\n    if (coeff == 0.0) return;\n\n    // Lazy global rescaling when the increment factor becomes too large\n    if (var_inc > 1e90) {\n        const double scale = 1e-100;\n        for (int i = 1; i <= vars; ++i) activity[i] *= scale;\n        var_inc *= scale;\n    }\n\n    // Update activity of the variable\n    activity[var] += var_inc * coeff;\n\n    // Local rescaling if this variable's activity overflows\n    if (activity[var] > 1e100) {\n        const double scale = 1e-100;\n        for (int i = 1; i <= vars; ++i) activity[i] *= scale;\n        var_inc *= scale;\n    }\n\n    // Keep the VSIDS heap consistent\n    if (vsids.inHeap(var)) vsids.update(var);\n}",
+  "PAR-2": 15455
+}

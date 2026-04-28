@@ -1,0 +1,7 @@
+{
+  "iter": 0,
+  "best_id": "1",
+  "time": 16647,
+  "code": "void Solver::bump_var(int var, double coeff) {\n    // compute increment based on current decay factor\n    double inc = var_inc * coeff;\n    activity[var] += inc;\n\n    // safeguard against floating point overflow by rescaling all activities\n    const double MAX_ACT = 1e120;\n    if (activity[var] > MAX_ACT) {\n        double scale = 1e-120;\n        for (int i = 1; i <= vars; ++i) {\n            activity[i] *= scale;\n        }\n        var_inc *= scale;\n    }\n\n    // keep the VSIDS priority queue up‑to‑date\n    if (vsids.inHeap(var)) {\n        vsids.update(var);\n    }\n}",
+  "PAR-2": 31647
+}

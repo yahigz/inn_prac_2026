@@ -1,0 +1,32 @@
+{
+  "version": 1,
+  "run_id": "checkpoint_write_test",
+  "next_iter": 3,
+  "results": {
+    "time": {
+      "0": 1
+    },
+    "prompt": {
+      "0": "x"
+    },
+    "PAR-2": {
+      "0": 2
+    }
+  },
+  "answers": {
+    "1": "code"
+  },
+  "extra_params": {
+    "1": {
+      "lbd_queue_size": "50"
+    }
+  },
+  "best_result": {
+    "1": [
+      1,
+      "code",
+      2
+    ]
+  },
+  "saved_at": 1776045355.0121024
+}

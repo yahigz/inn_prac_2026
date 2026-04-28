@@ -1,0 +1,7 @@
+{
+  "iter": 3,
+  "best_id": "4",
+  "time": 10457,
+  "code": "void Solver::rephase() {\n    // Reset the rephase counter.\n    rephases = 0;\n\n    // Decay the trail‑size threshold more gently (avoid too aggressive shrinking).\n    threshold = static_cast<int>(threshold * 0.95);\n\n    // Grow the rephase limit, but slower than the original implementation.\n    rephase_limit += 4096;\n\n    // ---- Phase‑saving strategy ----\n    // By default keep the best local phase for every variable.\n    for (int i = 1; i <= vars; ++i) {\n        saved[i] = local_best[i];\n    }\n\n    // To diversify the search, invert the phase of a small random subset\n    // of variables (e.g., ~5 % of the total). This helps escape local minima\n    // without destroying the overall learned polarity information.\n    int invert_cnt = vars / 20;               // 5 % of variables\n    for (int k = 0; k < invert_cnt; ++k) {\n        int v = 1 + rand() % vars;            // pick a random variable\n        saved[v] = -saved[v];                 // flip its saved polarity\n    }\n}",
+  "PAR-2": 10457
+}

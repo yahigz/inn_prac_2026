@@ -1,0 +1,20 @@
+{
+  "time": {
+    "17": 10870
+  },
+  "prompt": {
+    "17": "void Solver::bump_var(int var, double coeff) {\n    // increase activity proportionally to the given coefficient\n    double inc = var_inc * coeff;\n    activity[var] += inc;\n\n    // keep activity values from blowing up – rescale when a limit is exceeded\n    const double ACT_LIMIT = 1e120;\n    if (activity[var] > ACT_LIMIT) {\n        double scale = 1e-120;\n        for (int i = 1; i <= vars; ++i) activity[i] *= scale;\n        var_inc *= scale;\n    }\n\n    // make sure the variable participates in the VSIDS heap\n    if (vsids.inHeap(var)) {\n        vsids.update(var);\n    } else {\n        vsids.insert(var);\n    }\n}"
+  },
+  "PAR-2": {
+    "17": 10870
+  },
+  "satisfiable": {
+    "17": 5
+  },
+  "unsatisfiable": {
+    "17": 7
+  },
+  "timeout": {
+    "17": 0
+  }
+}

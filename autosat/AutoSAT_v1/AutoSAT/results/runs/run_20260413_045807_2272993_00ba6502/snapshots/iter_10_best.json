@@ -1,0 +1,7 @@
+{
+  "iter": 10,
+  "best_id": "11",
+  "time": 13733,
+  "code": "void Solver::bump_var(int var, double coeff) {\n    const double THRESH = 1e100;\n    const double SCALE  = 1e-100;\n\n    // increase activity of the variable\n    double inc = var_inc * coeff;\n    activity[var] += inc;\n\n    // if this variable's activity exceeds the threshold, down‑scale only this entry\n    // and the global increment to avoid a full O(vars) pass.\n    if (activity[var] > THRESH) {\n        activity[var] *= SCALE;\n        var_inc *= SCALE;\n    }\n\n    // keep the VSIDS heap up‑to‑date\n    if (vsids.inHeap(var)) {\n        vsids.update(var);\n    }\n}",
+  "PAR-2": 23733
+}

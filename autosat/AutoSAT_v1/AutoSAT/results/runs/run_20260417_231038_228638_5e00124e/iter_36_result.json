@@ -1,0 +1,20 @@
+{
+  "time": {
+    "37": 16060
+  },
+  "prompt": {
+    "37": "void Solver::bump_var(int var, double coeff) {\n    if (coeff == 0.0) return;                         // nothing to do\n    // Compute increment once\n    double inc = var_inc * coeff;\n    double new_act = activity[var] + inc;\n\n    // Lazy overflow protection: rescale only when activity exceeds a high bound\n    const double OVERFLOW_LIMIT = 1e120;               // larger than original 1e100\n    if (new_act > OVERFLOW_LIMIT) {\n        const double SCALE = 1e-120;\n        for (int i = 1; i <= vars; ++i) activity[i] *= SCALE;\n        var_inc *= SCALE;\n        new_act = activity[var] + inc;                 // recompute after scaling\n    }\n    activity[var] = new_act;\n\n    // Keep the VSIDS heap up‑to‑date\n    if (vsids.inHeap(var)) {\n        vsids.update(var);\n    } else {\n        // If the variable was removed from the heap (e.g., after backtrack), re‑insert it.\n        vsids.insert(var);\n    }\n}"
+  },
+  "PAR-2": {
+    "37": 16060
+  },
+  "satisfiable": {
+    "37": 5
+  },
+  "unsatisfiable": {
+    "37": 7
+  },
+  "timeout": {
+    "37": 0
+  }
+}

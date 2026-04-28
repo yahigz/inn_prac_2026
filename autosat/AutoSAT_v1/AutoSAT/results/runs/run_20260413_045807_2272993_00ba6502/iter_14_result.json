@@ -1,0 +1,20 @@
+{
+  "time": {
+    "15": 2396
+  },
+  "prompt": {
+    "15": "void Solver::bump_var(int var, double coeff) {\n    // Increment activity with the given coefficient\n    double delta = var_inc * coeff;\n    activity[var] += delta;\n\n    // Scale down all activities and var_inc only when a single activity exceeds a high threshold.\n    // This reduces the frequency of the O(vars) scaling loop compared to the original implementation.\n    const double THRESH = 1e120;   // higher threshold to postpone scaling\n    const double SCALE  = 1e-120;  // corresponding scaling factor\n\n    if (activity[var] > THRESH) {\n        for (int i = 1; i <= vars; ++i) activity[i] *= SCALE;\n        var_inc *= SCALE;\n    }\n\n    // Keep the VSIDS heap up‑to‑date\n    if (vsids.inHeap(var)) vsids.update(var);\n}"
+  },
+  "PAR-2": {
+    "15": 2396
+  },
+  "satisfiable": {
+    "15": 19
+  },
+  "unsatisfiable": {
+    "15": 0
+  },
+  "timeout": {
+    "15": 0
+  }
+}

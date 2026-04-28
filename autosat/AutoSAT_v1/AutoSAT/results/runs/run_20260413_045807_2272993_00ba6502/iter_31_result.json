@@ -1,0 +1,20 @@
+{
+  "time": {
+    "32": 2268
+  },
+  "prompt": {
+    "32": "void Solver::bump_var(int var, double coeff) {\n    // compute increment and tentative new activity\n    double inc = var_inc * coeff;\n    double new_act = activity[var] + inc;\n\n    // if overflow would occur, rescale all activities and var_inc\n    if (new_act > 1e100) {\n        const double scale = 1e-100;\n        // scale the whole activity array (skip index 0)\n        double* p = &activity[1];\n        int remaining = vars;\n        while (remaining--) {\n            *p++ *= scale;\n        }\n        var_inc *= scale;\n        activity[var] = new_act * scale;\n    } else {\n        activity[var] = new_act;\n    }\n\n    // update VSIDS heap if the variable is present\n    if (vsids.inHeap(var)) {\n        vsids.update(var);\n    }\n}"
+  },
+  "PAR-2": {
+    "32": 2268
+  },
+  "satisfiable": {
+    "32": 19
+  },
+  "unsatisfiable": {
+    "32": 0
+  },
+  "timeout": {
+    "32": 0
+  }
+}

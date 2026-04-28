@@ -1,0 +1,7 @@
+{
+  "iter": 6,
+  "best_id": "7",
+  "time": 9494,
+  "code": "void Solver::restart() {\n    // Reset LBD statistics\n    fast_lbd_sum = 0;\n    lbd_queue_size = 0;\n    lbd_queue_pos = 0;\n    // Backtrack to root level\n    backtrack(0);\n    // Rephase variables with a more aggressive random strategy\n    int r = rand() % 100;\n    if (r < 30) {\n        // Use the best local phase found so far\n        for (int i = 1; i <= vars; ++i) saved[i] = local_best[i];\n    } else if (r < 60) {\n        // Use the opposite of the best local phase\n        for (int i = 1; i <= vars; ++i) saved[i] = -local_best[i];\n    } else {\n        // Randomly assign a phase\n        for (int i = 1; i <= vars; ++i) saved[i] = (rand() & 1) ? 1 : -1;\n    }\n    // Optionally enlarge the restart threshold to delay immediate rephasing\n    threshold = std::max(threshold, (int)trail.size() * 2);\n}",
+  "PAR-2": 9494
+}

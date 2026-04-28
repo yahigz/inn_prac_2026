@@ -1,0 +1,7 @@
+{
+  "iter": 38,
+  "best_id": "39",
+  "time": 1736,
+  "code": "void Solver::bump_var(int var, double coeff) {\n    const double ACT_OVERFLOW = 1e100;\n    const double VARINC_LIMIT = 1e90;\n    const double SCALE = 1e-100;\n\n    // Rescale globally if var_inc is becoming too large (pre‑emptive scaling)\n    if (var_inc > VARINC_LIMIT) {\n        for (int i = 1; i <= vars; ++i) activity[i] *= SCALE;\n        var_inc *= SCALE;\n    }\n\n    // Update activity of the variable\n    activity[var] += var_inc * coeff;\n\n    // If this variable overflowed, rescale everything now\n    if (activity[var] > ACT_OVERFLOW) {\n        for (int i = 1; i <= vars; ++i) activity[i] *= SCALE;\n        var_inc *= SCALE;\n    }\n\n    // Keep the VSIDS heap up‑to‑date\n    if (vsids.inHeap(var)) vsids.update(var);\n}",
+  "PAR-2": 1736
+}

@@ -1,0 +1,20 @@
+{
+  "time": {
+    "51": 2176
+  },
+  "prompt": {
+    "51": "void Solver::bump_var(int var, double coeff) {\n    // Compute increment\n    double inc = var_inc * coeff;\n    activity[var] += inc;\n\n    // Rescale only when necessary (much less frequent than original)\n    const double THRESH = 1e150;   // very high threshold to avoid frequent full scans\n    const double SCALE  = 1e-150;  // reciprocal scaling factor\n\n    // If either the global increment or this variable's activity exploded, rescale everything\n    if (var_inc > THRESH || activity[var] > THRESH) {\n        for (int i = 1; i <= vars; ++i) {\n            activity[i] *= SCALE;\n        }\n        var_inc *= SCALE;\n    }\n\n    // Keep the VSIDS heap up‑to‑date\n    if (vsids.inHeap(var)) {\n        vsids.update(var);\n    }\n}"
+  },
+  "PAR-2": {
+    "51": 2176
+  },
+  "satisfiable": {
+    "51": 19
+  },
+  "unsatisfiable": {
+    "51": 0
+  },
+  "timeout": {
+    "51": 0
+  }
+}

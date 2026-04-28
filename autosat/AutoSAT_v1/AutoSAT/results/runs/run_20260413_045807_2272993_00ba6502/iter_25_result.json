@@ -1,0 +1,20 @@
+{
+  "time": {
+    "26": 1781
+  },
+  "prompt": {
+    "26": "void Solver::bump_var(int var, double coeff) {\n    double inc = var_inc * coeff;\n    double newAct = activity[var] + inc;\n    if (newAct > 1e100) {\n        const double SCALE = 1e-100;\n        for (int i = 1; i <= vars; ++i) activity[i] *= SCALE;\n        var_inc *= SCALE;\n        newAct = activity[var] + inc; // recompute after scaling\n    }\n    activity[var] = newAct;\n    if (vsids.inHeap(var)) vsids.update(var);\n}"
+  },
+  "PAR-2": {
+    "26": 1781
+  },
+  "satisfiable": {
+    "26": 19
+  },
+  "unsatisfiable": {
+    "26": 0
+  },
+  "timeout": {
+    "26": 0
+  }
+}

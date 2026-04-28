@@ -1,0 +1,20 @@
+{
+  "time": {
+    "6": 11355
+  },
+  "prompt": {
+    "6": "void Solver::bump_var(int var, double coeff) {\n    static const double LIMIT = 1e100;\n    static const double SCALE = 1e-100;\n    static double max_act = 0.0;               // tracks the current maximum activity\n\n    // increase activity of the variable\n    double inc = var_inc * coeff;\n    activity[var] += inc;\n\n    // update the global maximum and rescale if needed\n    if (activity[var] > max_act) max_act = activity[var];\n    if (max_act > LIMIT) {\n        for (int i = 1; i <= vars; ++i) activity[i] *= SCALE;\n        var_inc *= SCALE;\n        max_act *= SCALE;\n    }\n\n    // maintain VSIDS priority queue\n    if (vsids.inHeap(var)) vsids.update(var);\n}"
+  },
+  "PAR-2": {
+    "6": 11355
+  },
+  "satisfiable": {
+    "6": 5
+  },
+  "unsatisfiable": {
+    "6": 7
+  },
+  "timeout": {
+    "6": 0
+  }
+}

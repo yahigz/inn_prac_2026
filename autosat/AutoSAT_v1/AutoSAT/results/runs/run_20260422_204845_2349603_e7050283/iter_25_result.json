@@ -1,0 +1,20 @@
+{
+  "time": {
+    "26": 10316
+  },
+  "prompt": {
+    "26": "else if (lbd_queue_size == 30 && 0.7 * fast_lbd_sum / lbd_queue_size > slow_lbd_sum / (conflicts + 1)) restart();"
+  },
+  "PAR-2": {
+    "26": 10316
+  },
+  "satisfiable": {
+    "26": 5
+  },
+  "unsatisfiable": {
+    "26": 7
+  },
+  "timeout": {
+    "26": 0
+  }
+}

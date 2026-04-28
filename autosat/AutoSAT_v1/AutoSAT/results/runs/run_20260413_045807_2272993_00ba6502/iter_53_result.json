@@ -1,0 +1,20 @@
+{
+  "time": {
+    "54": 2263
+  },
+  "prompt": {
+    "54": "void Solver::bump_var(int var, double coeff) {\n    // Increment activity for the variable.\n    double inc = var_inc * coeff;\n    activity[var] += inc;\n\n    // Lazy overflow handling: rescale all activities if any exceeds the threshold.\n    constexpr double OVERFLOW_THR = 1e100;\n    constexpr double RESCALE_FAC   = 1e-100;\n    if (activity[var] > OVERFLOW_THR || var_inc > OVERFLOW_THR) {\n        for (int i = 1; i <= vars; ++i) activity[i] *= RESCALE_FAC;\n        var_inc *= RESCALE_FAC;\n    }\n\n    // Keep the VSIDS priority queue up‑to‑date.\n    if (vsids.inHeap(var)) {\n        vsids.update(var);\n    }\n}"
+  },
+  "PAR-2": {
+    "54": 2263
+  },
+  "satisfiable": {
+    "54": 19
+  },
+  "unsatisfiable": {
+    "54": 0
+  },
+  "timeout": {
+    "54": 0
+  }
+}

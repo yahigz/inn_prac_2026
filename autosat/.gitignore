@@ -10,8 +10,6 @@ AutoSAT/original_results_*.txt
 
 # AutoSAT_v1 generated artifacts
 AutoSAT_v1/AutoSAT/temp/
-AutoSAT_v1/AutoSAT/results/runs/
-AutoSAT_v1/AutoSAT/results/checkpoints/
 AutoSAT_v1/AutoSAT/*.log
 AutoSAT_v1/AutoSAT/*.nohup.log
 

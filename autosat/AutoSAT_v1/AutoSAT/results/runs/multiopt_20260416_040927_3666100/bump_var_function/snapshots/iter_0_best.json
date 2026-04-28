@@ -1,0 +1,7 @@
+{
+  "iter": 0,
+  "best_id": "1",
+  "time": 87,
+  "code": "void Solver::bump_var(int var, double coeff) {\n    // Increase activity of the variable by a scaled coefficient\n    activity[var] += var_inc * coeff;\n\n    // Prevent floating‑point overflow by rescaling all activities when a limit is exceeded\n    const double ACT_LIMIT = 1e100;\n    if (activity[var] > ACT_LIMIT) {\n        const double SCALE = 1e-100;\n        for (int i = 1; i <= vars; ++i) {\n            activity[i] *= SCALE;\n        }\n        var_inc *= SCALE;\n    }\n\n    // Keep the VSIDS heap consistent: update if already present, otherwise insert\n    if (vsids.inHeap(var)) {\n        vsids.update(var);\n    } else {\n        vsids.insert(var);\n    }\n}",
+  "PAR-2": 87
+}

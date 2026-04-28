@@ -1,0 +1,7 @@
+{
+  "iter": 51,
+  "best_id": "52",
+  "time": 2055,
+  "code": "void Solver::bump_var(int var, double coeff) {\n    // add increment\n    double inc = var_inc * coeff;\n    activity[var] += inc;\n\n    // static counter to limit full rescales\n    static unsigned long long bump_counter = 0;\n    ++bump_counter;\n\n    // trigger a full rescale only when necessary and not too often\n    const double OVERFLOW_THRESH = 1e100;\n    const double SCALE_FACTOR    = 1e-100;\n    const unsigned long long RESCALE_PERIOD = 1024ULL; // every 1024 bumps at most\n\n    bool need_rescale = (activity[var] > OVERFLOW_THRESH) || (var_inc > OVERFLOW_THRESH);\n    if (need_rescale && (bump_counter % RESCALE_PERIOD == 0)) {\n        for (int i = 1; i <= vars; ++i) activity[i] *= SCALE_FACTOR;\n        var_inc *= SCALE_FACTOR;\n    } else if (need_rescale) {\n        // cap the offending value to avoid immediate overflow\n        if (activity[var] > OVERFLOW_THRESH) activity[var] = OVERFLOW_THRESH;\n        if (var_inc > OVERFLOW_THRESH) var_inc = OVERFLOW_THRESH;\n    }\n\n    // keep VSIDS heap up‑to‑date\n    if (vsids.inHeap(var)) {\n        vsids.update(var);\n    }\n}",
+  "PAR-2": 2055
+}

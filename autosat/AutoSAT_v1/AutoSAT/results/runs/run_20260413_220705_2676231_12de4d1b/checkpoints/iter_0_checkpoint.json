@@ -1,0 +1,44 @@
+{
+  "version": 1,
+  "run_id": "run_20260413_220705_2676231_12de4d1b",
+  "next_iter": 1,
+  "results": {
+    "time": {
+      "0": 124499,
+      "1": 130825
+    },
+    "prompt": {
+      "0": "",
+      "1": "void Solver::bump_var(int var, double coeff) {\n    double delta = var_inc * coeff;\n    activity[var] += delta;\n    if (activity[var] > 1e100) {\n        const double scale = 1e-100;\n        for (int i = 1; i <= vars; ++i) {\n            activity[i] *= scale;\n        }\n        var_inc *= scale;\n    }\n    if (vsids.inHeap(var)) {\n        vsids.update(var);\n    }\n}"
+    },
+    "PAR-2": {
+      "0": 229499,
+      "1": 250825
+    },
+    "satisfiable": {
+      "0": 27
+    },
+    "unsatisfiable": {
+      "0": 0
+    },
+    "timeout": {
+      "0": 21
+    }
+  },
+  "answers": {
+    "1": "void Solver::bump_var(int var, double coeff) {\n    double delta = var_inc * coeff;\n    activity[var] += delta;\n    if (activity[var] > 1e100) {\n        const double scale = 1e-100;\n        for (int i = 1; i <= vars; ++i) {\n            activity[i] *= scale;\n        }\n        var_inc *= scale;\n    }\n    if (vsids.inHeap(var)) {\n        vsids.update(var);\n    }\n}"
+  },
+  "extra_params": {
+    "1": {
+      "lbd_queue_size": "50"
+    }
+  },
+  "best_result": {
+    "1": [
+      130825,
+      "void Solver::bump_var(int var, double coeff) {\n    double delta = var_inc * coeff;\n    activity[var] += delta;\n    if (activity[var] > 1e100) {\n        const double scale = 1e-100;\n        for (int i = 1; i <= vars; ++i) {\n            activity[i] *= scale;\n        }\n        var_inc *= scale;\n    }\n    if (vsids.inHeap(var)) {\n        vsids.update(var);\n    }\n}",
+      250825
+    ]
+  },
+  "saved_at": 1776157221.3848476
+}

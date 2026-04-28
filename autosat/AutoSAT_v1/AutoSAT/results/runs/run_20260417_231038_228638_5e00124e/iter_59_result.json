@@ -1,0 +1,20 @@
+{
+  "time": {
+    "60": 11053
+  },
+  "prompt": {
+    "60": "void Solver::rephase() {\n    // 1. Reset the rephase counter.\n    rephases = 0;\n\n    // 2. Dynamically tighten the threshold.\n    //    When many conflicts have been seen we want to update local_best more often.\n    if (conflicts > 20000) {\n        threshold = (int)(threshold * 0.80);   // aggressive tightening\n    } else if (conflicts > 10000) {\n        threshold = (int)(threshold * 0.85);\n    } else {\n        threshold = (int)(threshold * 0.95);   // gentle tightening\n    }\n    if (threshold < 1) threshold = 1;           // safety guard\n\n    // 3. Grow the rephase limit gradually so that rephasing does not happen too frequently.\n    //    The increment is larger when we have already performed many rephases.\n    rephase_limit = (int)(rephase_limit * 1.15) + 4096;\n    if (rephase_limit < 8192) rephase_limit = 8192; // minimum bound\n\n    // 4. Adjust saved phases based on recent LBD behaviour.\n    //    If the recent LBD average is worsening, invert a random half of the phases;\n    //    otherwise, fall back to the best local phase seen so far.\n    if (lbd_queue_size == 50 && fast_lbd_sum > slow_lbd_sum) {\n        // Invert phases for a random subset (≈50%) to diversify search.\n        for (int i = 1; i <= vars; ++i) {\n            if (rand() % 2) saved[i] = -saved[i];\n        }\n    } else {\n        // Keep the locally best polarity.\n        for (int i = 1; i <= vars; ++i) saved[i] = local_best[i];\n    }\n\n    // 5. Reset the VSIDS activity increment to avoid excessive decay.\n    var_inc = 1.0;\n}"
+  },
+  "PAR-2": {
+    "60": 11053
+  },
+  "satisfiable": {
+    "60": 5
+  },
+  "unsatisfiable": {
+    "60": 7
+  },
+  "timeout": {
+    "60": 0
+  }
+}

@@ -1,0 +1,7 @@
+{
+  "iter": 58,
+  "best_id": "59",
+  "time": 2260,
+  "code": "void Solver::bump_var(int var, double coeff) {\n    constexpr double LIMIT   = 1e100;\n    constexpr double RESCALE = 1e-100;\n\n    if (coeff == 0.0) return;                     // nothing to do\n\n    double inc = var_inc * coeff;\n    double newAct = activity[var] + inc;\n    activity[var] = newAct;\n\n    if (newAct > LIMIT) {\n        // Rescale all activities without extra bounds checks\n        double *ptr = activity + 1;               // activity[0] is unused\n        for (int i = vars; i > 0; --i) {\n            *ptr++ *= RESCALE;\n        }\n        var_inc *= RESCALE;\n    }\n\n    if (vsids.inHeap(var)) {\n        vsids.update(var);\n    }\n}",
+  "PAR-2": 2260
+}

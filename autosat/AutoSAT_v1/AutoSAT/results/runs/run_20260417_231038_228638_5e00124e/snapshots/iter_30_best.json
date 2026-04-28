@@ -1,0 +1,7 @@
+{
+  "iter": 30,
+  "best_id": "31",
+  "time": 60000,
+  "code": "void Solver::restart() {\n    // Reset LBD statistics\n    fast_lbd_sum = 0;\n    lbd_queue_size = 0;\n    lbd_queue_pos = 0;\n    slow_lbd_sum = 0;\n\n    // Backtrack to root level\n    backtrack(0);\n\n    // Decay activity scores and re‑insert all variables into VSIDS heap\n    for (int v = 1; v <= vars; ++v) {\n        activity[v] *= 0.5;\n        if (!vsids.inHeap(v)) vsids.insert(v);\n    }\n    var_inc = 1.0;  // reset variable increment factor\n\n    // Rephase variables with a new random strategy\n    int r = rand() % 100;\n    if (r < 30) {\n        // Use the best local assignment found so far\n        for (int i = 1; i <= vars; ++i) saved[i] = local_best[i];\n    } else if (r < 55) {\n        // Use the opposite of the best local assignment\n        for (int i = 1; i <= vars; ++i) saved[i] = -local_best[i];\n    } else if (r < 80) {\n        // Random polarity for each variable\n        for (int i = 1; i <= vars; ++i) saved[i] = (rand() & 1) ? 1 : -1;\n    } else {\n        // Keep the current saved phases (no change)\n    }\n\n    // Reset thresholds for rephase and reduce to avoid premature triggers\n    threshold = trail.size();\n    rephase_limit = 8192;\n    reduce_limit = 512;\n}",
+  "PAR-2": 120000
+}

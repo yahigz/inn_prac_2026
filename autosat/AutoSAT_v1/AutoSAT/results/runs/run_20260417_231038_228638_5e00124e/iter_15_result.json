@@ -1,0 +1,20 @@
+{
+  "time": {
+    "16": 10982
+  },
+  "prompt": {
+    "16": "void Solver::rephase() {\n    // Reset the rephase counter for the next cycle\n    rephases = 0;\n\n    // Make the next rephase happen a bit earlier (more aggressive)\n    threshold = static_cast<int>(threshold * 0.85);\n\n    // Allow a larger number of rephases before the next trigger\n    rephase_limit += 4096;\n\n    // ---- Choose a new phase assignment strategy ----\n    // 40% : keep the best phase seen so far\n    // 30% : flip the best phase\n    // 30% : assign a completely random phase\n    int r = rand() % 100;\n    if (r < 40) {\n        for (int i = 1; i <= vars; ++i) saved[i] = local_best[i];\n    } else if (r < 70) {\n        for (int i = 1; i <= vars; ++i) saved[i] = -local_best[i];\n    } else {\n        for (int i = 1; i <= vars; ++i) saved[i] = (rand() & 1) ? 1 : -1;\n    }\n\n    // ---- Refresh the VSIDS heap ----\n    // Re‑insert any variable that might have been removed from the heap\n    for (int i = 1; i <= vars; ++i) {\n        if (!vsids.inHeap(i)) vsids.insert(i);\n    }\n}"
+  },
+  "PAR-2": {
+    "16": 10982
+  },
+  "satisfiable": {
+    "16": 5
+  },
+  "unsatisfiable": {
+    "16": 7
+  },
+  "timeout": {
+    "16": 0
+  }
+}

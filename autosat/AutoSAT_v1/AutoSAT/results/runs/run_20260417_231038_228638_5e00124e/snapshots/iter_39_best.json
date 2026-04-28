@@ -1,0 +1,7 @@
+{
+  "iter": 39,
+  "best_id": "40",
+  "time": 14361,
+  "code": "void Solver::rephase() {\n    // Reset the rephase counter so the new phases can take effect immediately\n    rephases = 0;\n\n    // Make the next rephase trigger a bit earlier when the search is deep\n    // Reduce the threshold more aggressively but never below the current trail size\n    threshold = std::max((int)(threshold * 0.85), (int)trail.size());\n\n    // Grow the rephase limit gradually (add 25% of the current limit)\n    rephase_limit += (rephase_limit >> 2);\n\n    // Choose a new phase‑saving strategy\n    int strategy = rand() % 4;\n    for (int i = 1; i <= vars; ++i) {\n        if (strategy == 0) {\n            // Use the best phase seen so far\n            saved[i] = local_best[i];\n        } else if (strategy == 1) {\n            // Use the opposite of the best phase\n            saved[i] = -local_best[i];\n        } else if (strategy == 2) {\n            // Randomly assign a polarity\n            saved[i] = (rand() & 1) ? 1 : -1;\n        } else {\n            // Keep the previous saved polarity, but flip it with a small probability\n            if (rand() % 10 == 0) saved[i] = -saved[i];\n        }\n    }\n\n    // Apply the new phases by backtracking to the root level\n    backtrack(0);\n}",
+  "PAR-2": 19361
+}

@@ -1,0 +1,7 @@
+{
+  "iter": 30,
+  "best_id": "31",
+  "time": 2240,
+  "code": "void Solver::bump_var(int var, double coeff) {\n    // Compute the increment and tentative new activity\n    double inc = var_inc * coeff;\n    double new_act = activity[var] + inc;\n\n    // If the new activity would overflow, rescale all activities and var_inc\n    if (new_act > 1e100) {\n        const double scale = 1e-100;\n        for (int i = 1; i <= vars; ++i) activity[i] *= scale;\n        var_inc *= scale;\n        // Apply scaling to the current variable's activity as well\n        activity[var] = new_act * scale;\n    } else {\n        activity[var] = new_act;\n    }\n\n    // Update VSIDS heap if the variable is present\n    if (vsids.inHeap(var)) vsids.update(var);\n}",
+  "PAR-2": 2240
+}

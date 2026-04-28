@@ -1,0 +1,22 @@
+{
+  "0": {
+    "time": 0,
+    "PAR-2": 1,
+    "prompt": " "
+  },
+  "9": {
+    "time": 18801,
+    "PAR-2": 18801,
+    "prompt": "void Solver::rephase() {\n    // 1) Reset the rephase counter – we start a fresh rephase cycle.\n    rephases = 0;\n\n    // 2) Adjust the trail‑size threshold.\n    //    Instead of shrinking it, we raise it a little so that the next\n    //    rephase will happen after a larger amount of search effort.\n    //    Use the current trail length as a lower bound.\n    threshold = std::max((int)trail.size(), (int)(threshold * 1.10));\n\n    // 3) Grow the rephase limit adaptively.\n    //    The more conflicts we have seen, the larger the limit becomes,\n    //    allowing the solver to stay longer in the current phase before\n    //    forcing another rephase.\n    rephase_limit += (conflicts / 10) + 1000;\n\n    // 4) Update the saved phase information.\n    //    We keep a mixture of deterministic and random strategies:\n    //      • 70 % of the time we copy the best local phase seen so far.\n    //      • 20 % of the time we invert that best phase (to escape local minima).\n    //      • 10 % of the time we pick a completely random polarity.\n    int r = rand() % 100;\n    if (r < 70) {\n        // copy the locally best phase\n        for (int i = 1; i <= vars; ++i) saved[i] = local_best[i];\n    } else if (r < 90) {\n        // invert the locally best phase\n        for (int i = 1; i <= vars; ++i) saved[i] = -local_best[i];\n    } else {\n        // random polarity\n        for (int i = 1; i <= vars; ++i) saved[i] = (rand() & 1) ? 1 : -1;\n    }\n}"
+  },
+  "17": {
+    "time": 17330,
+    "PAR-2": 17330,
+    "prompt": "void Solver::rephase() {\n    // 1. Reset the rephase counter – start a fresh rephase cycle.\n    rephases = 0;\n\n    // 2. Make the trail‑size threshold more aggressive.\n    //    Reduce it by 15 % but never let it drop below the number of variables\n    //    (so we keep a reasonable lower bound).\n    threshold = std::max((int)(threshold * 0.85), vars);\n\n    // 3. Grow the rephase limit adaptively.\n    //    Add a base increment (4096) plus half of the current limit.\n    //    This lets the solver stay longer in a rephase‑rich phase when it is\n    //    making progress, but still forces a new rephase eventually.\n    rephase_limit += 4096 + rephase_limit / 2;\n\n    // 4. Diversify the saved phases after a rephase.\n    //    Randomly choose one of three strategies:\n    //      – reuse the best local phase,\n    //      – use the opposite of the best local phase,\n    //      – pick a completely random polarity.\n    int mode = rand() % 3;\n    if (mode == 0) {\n        for (int i = 1; i <= vars; ++i) saved[i] = local_best[i];\n    } else if (mode == 1) {\n        for (int i = 1; i <= vars; ++i) saved[i] = -local_best[i];\n    } else {\n        for (int i = 1; i <= vars; ++i) saved[i] = (rand() % 2) ? 1 : -1;\n    }\n}"
+  },
+  "19": {
+    "time": 1734,
+    "PAR-2": 1734,
+    "prompt": "void Solver::rephase() {\n    // 1) Reset the rephase counter – we start a fresh re‑phase cycle.\n    rephases = 0;\n\n    // 2) Make the next re‑phase trigger a bit earlier.\n    //    Instead of a simple 0.9 factor we use a slightly stronger reduction\n    //    and also ensure the threshold never drops below a small constant.\n    threshold = std::max( (int)(threshold * 0.85), 100 );\n\n    // 3) Grow the re‑phase limit, but keep it bounded to avoid runaway growth.\n    //    The original code added a fixed 8192; we add a smaller step and cap it.\n    const int REPHASE_LIMIT_MAX = 200000;\n    rephase_limit = std::min( rephase_limit + 4096, REPHASE_LIMIT_MAX );\n\n    // 4) Refresh the saved phase information.\n    //    Use the best phase seen so far (local_best) but occasionally flip it\n    //    to inject diversification. This helps the solver escape from a bad\n    //    polarity bias after many restarts.\n    for (int v = 1; v <= vars; ++v) {\n        if (local_best[v] != 0) {\n            // 50 % chance to keep the best polarity, otherwise invert it.\n            saved[v] = (rand() & 1) ? local_best[v] : -local_best[v];\n        } else {\n            // If we have never seen a value for this variable, pick a random polarity.\n            saved[v] = (rand() & 1) ? 1 : -1;\n        }\n    }\n}"
+  }
+}

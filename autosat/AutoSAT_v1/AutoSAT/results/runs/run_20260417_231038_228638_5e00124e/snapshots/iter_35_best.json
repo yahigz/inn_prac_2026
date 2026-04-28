@@ -1,0 +1,7 @@
+{
+  "iter": 35,
+  "best_id": "36",
+  "time": 9086,
+  "code": "void Solver::rephase() {\n    // 1. Reset the rephase counter.\n    rephases = 0;\n\n    // 2. Make the threshold shrink more gently (5% instead of 10%).\n    threshold = static_cast<int>(threshold * 0.95);\n\n    // 3. Increase the limit for the next rephase step.\n    rephase_limit += 4096;          // a smaller step than the original +8192\n\n    // 4. Adaptive phase‑saving:\n    //    - Compute the average activity of all variables.\n    //    - Variables with activity above the average keep their current saved polarity.\n    //    - Variables with activity below the average have their polarity flipped.\n    double avg_act = 0.0;\n    for (int v = 1; v <= vars; ++v) avg_act += activity[v];\n    avg_act /= vars;\n\n    for (int v = 1; v <= vars; ++v) {\n        if (activity[v] <= avg_act) {\n            // flip the saved polarity for low‑activity variables\n            saved[v] = -saved[v];\n        }\n        // high‑activity variables keep their saved polarity (no change)\n    }\n\n    // 5. Small random perturbation to avoid getting stuck in a bad polarity pattern.\n    //    With a 10 % probability, randomly reassign the polarity of ~10 % of the variables.\n    if (rand() % 100 < 10) {\n        for (int v = 1; v <= vars; ++v) {\n            if (rand() % 10 == 0) {\n                saved[v] = (rand() & 1) ? 1 : -1;\n            }\n        }\n    }\n}",
+  "PAR-2": 9086
+}

@@ -1,0 +1,20 @@
+{
+  "time": {
+    "56": 10660
+  },
+  "prompt": {
+    "56": "void Solver::rephase() {\n    rephases = 0;\n    threshold *= 0.85;  // Slightly more aggressive reduction to trigger rephasing more often\n    rephase_limit += 10240;  // Increase limit more to allow more rephases before restart\n    // Update saved phases based on current trail assignments to capture recent progress\n    for (int i = 1; i <= vars; i++) {\n        if (value[i] != 0) {\n            saved[i] = value[i];  // Use current assignment as preferred phase\n        }\n    }\n}"
+  },
+  "PAR-2": {
+    "56": 10660
+  },
+  "satisfiable": {
+    "56": 5
+  },
+  "unsatisfiable": {
+    "56": 7
+  },
+  "timeout": {
+    "56": 0
+  }
+}

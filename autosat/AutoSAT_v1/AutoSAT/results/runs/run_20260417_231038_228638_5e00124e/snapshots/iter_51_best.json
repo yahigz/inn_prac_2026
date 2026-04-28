@@ -1,0 +1,7 @@
+{
+  "iter": 51,
+  "best_id": "52",
+  "time": 11885,
+  "code": "void Solver::rephase() {\n    // Reset the rephase counter.\n    rephases = 0;\n\n    // Make the next rephase a bit harder to trigger by increasing the threshold.\n    // Use the current trail size as a baseline and add a small margin.\n    threshold = std::max(threshold, (int)trail.size() + (int)(0.1 * trail.size()));\n\n    // Gradually raise the limit so we don't rephase too frequently.\n    // A 20% increase works well in practice.\n    rephase_limit = (int)(rephase_limit * 1.2);\n\n    // Decide which phase to use for each variable.\n    // If recent LBD statistics look promising (fast average < slow average),\n    // keep the locally best phase; otherwise invert it.\n    bool use_best = (lbd_queue_size > 0) &&\n                    ((fast_lbd_sum / (double)lbd_queue_size) <\n                     (slow_lbd_sum / (double)std::max(1, conflicts)));\n\n    for (int i = 1; i <= vars; ++i) {\n        if (use_best) {\n            saved[i] = local_best[i];          // keep the best local phase\n        } else {\n            saved[i] = -local_best[i];         // invert the best local phase\n        }\n    }\n\n    // Occasionally inject some randomness to escape stagnation.\n    if (rand() % 100 < 5) { // 5% chance\n        for (int i = 1; i <= vars; ++i) {\n            saved[i] = (rand() & 1) ? 1 : -1; // random polarity\n        }\n    }\n\n    // Finally, backtrack to the root level to apply the new phases.\n    backtrack(0);\n}",
+  "PAR-2": 11885
+}

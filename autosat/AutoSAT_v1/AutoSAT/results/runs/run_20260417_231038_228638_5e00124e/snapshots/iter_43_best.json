@@ -1,0 +1,7 @@
+{
+  "iter": 43,
+  "best_id": "44",
+  "time": 8806,
+  "code": "void Solver::rephase() {\n    // 1. Reset the rephase counter.\n    rephases = 0;\n\n    // 2. Make the trail‑size threshold a bit less aggressive.\n    //    This postpones the next “local‑best” update slightly.\n    threshold = static_cast<int>(threshold * 0.95);\n\n    // 3. Grow the rephase limit adaptively (instead of a fixed +8192).\n    //    The limit becomes larger as rephasing happens more often.\n    rephase_limit = static_cast<int>(rephase_limit * 1.2) + 1024;\n\n    // 4. Reset activity scaling to avoid overflow and give a fresh VSIDS start.\n    var_inc = 1.0;\n    for (int v = 1; v <= vars; ++v) {\n        activity[v] = 1.0;\n    }\n\n    // 5. Rebuild the VSIDS heap with only currently unassigned variables.\n    while (!vsids.empty()) vsids.pop();\n    for (int v = 1; v <= vars; ++v) {\n        if (value[v] == 0) {\n            vsids.insert(v);\n        }\n    }\n\n    // 6. Choose new saved phases:\n    //    - 60 % keep the best local phase,\n    //    - 20 % use the opposite of the best local phase,\n    //    - 20 % pick a random polarity.\n    int r = rand() % 100;\n    if (r < 60) {\n        for (int i = 1; i <= vars; ++i) saved[i] = local_best[i];\n    } else if (r < 80) {\n        for (int i = 1; i <= vars; ++i) saved[i] = -local_best[i];\n    } else {\n        for (int i = 1; i <= vars; ++i) saved[i] = (rand() & 1) ? 1 : -1;\n    }\n\n    // 7. Backtrack to the root level so that the new phases take effect.\n    backtrack(0);\n}",
+  "PAR-2": 8806
+}

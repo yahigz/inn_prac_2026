@@ -1,0 +1,58 @@
+{
+  "version": 1,
+  "run_id": "run_20260416_174122_3823914_1550851f",
+  "next_iter": 3,
+  "results": {
+    "time": {
+      "0": 8937,
+      "1": 7931,
+      "2": 11547,
+      "3": 11580
+    },
+    "prompt": {
+      "0": "",
+      "1": "void Solver::bump_var(int var, double coeff) {\n    // Compute increment and update activity\n    double inc = var_inc * coeff;\n    activity[var] += inc;\n\n    // Rescale activities if they grow too large to avoid overflow\n    const double RESCALE_LIMIT = 1e150;\n    if (activity[var] > RESCALE_LIMIT) {\n        const double SCALE = 1e-150;\n        for (int i = 1; i <= vars; ++i) activity[i] *= SCALE;\n        var_inc *= SCALE;\n    }\n\n    // Keep the VSIDS priority queue consistent\n    if (vsids.inHeap(var)) {\n        vsids.update(var);\n    } else {\n        // Insert the variable if it is not already in the heap\n        vsids.insert(var);\n    }\n}",
+      "2": "void Solver::bump_var(int var, double coeff) {\n    activity[var] += var_inc * coeff;\n    const double LIMIT = 1e100;\n    if (activity[var] > LIMIT || var_inc > LIMIT) {\n        const double SCALE = 1e-100;\n        for (int i = 1; i <= vars; ++i) activity[i] *= SCALE;\n        var_inc *= SCALE;\n    }\n    if (vsids.inHeap(var)) vsids.update(var);\n}",
+      "3": "void Solver::bump_var(int var, double coeff) {\n    if (coeff == 0.0) return;\n    double inc = var_inc * coeff;\n    activity[var] += inc;\n    const double LIMIT = 1e100;\n    if (activity[var] > LIMIT) {\n        const double SCALE = 1e-100;\n        for (int i = 1; i <= vars; ++i) activity[i] *= SCALE;\n        var_inc *= SCALE;\n    }\n    if (vsids.inHeap(var)) vsids.update(var);\n}"
+    },
+    "PAR-2": {
+      "0": 8937,
+      "1": 7931,
+      "2": 11547,
+      "3": 11580
+    },
+    "satisfiable": {
+      "0": 5
+    },
+    "unsatisfiable": {
+      "0": 7
+    },
+    "timeout": {
+      "0": 0
+    }
+  },
+  "answers": {
+    "1": "void Solver::bump_var(int var, double coeff) {\n    // Compute increment and update activity\n    double inc = var_inc * coeff;\n    activity[var] += inc;\n\n    // Rescale activities if they grow too large to avoid overflow\n    const double RESCALE_LIMIT = 1e150;\n    if (activity[var] > RESCALE_LIMIT) {\n        const double SCALE = 1e-150;\n        for (int i = 1; i <= vars; ++i) activity[i] *= SCALE;\n        var_inc *= SCALE;\n    }\n\n    // Keep the VSIDS priority queue consistent\n    if (vsids.inHeap(var)) {\n        vsids.update(var);\n    } else {\n        // Insert the variable if it is not already in the heap\n        vsids.insert(var);\n    }\n}",
+    "2": "void Solver::bump_var(int var, double coeff) {\n    activity[var] += var_inc * coeff;\n    const double LIMIT = 1e100;\n    if (activity[var] > LIMIT || var_inc > LIMIT) {\n        const double SCALE = 1e-100;\n        for (int i = 1; i <= vars; ++i) activity[i] *= SCALE;\n        var_inc *= SCALE;\n    }\n    if (vsids.inHeap(var)) vsids.update(var);\n}",
+    "3": "void Solver::bump_var(int var, double coeff) {\n    if (coeff == 0.0) return;\n    double inc = var_inc * coeff;\n    activity[var] += inc;\n    const double LIMIT = 1e100;\n    if (activity[var] > LIMIT) {\n        const double SCALE = 1e-100;\n        for (int i = 1; i <= vars; ++i) activity[i] *= SCALE;\n        var_inc *= SCALE;\n    }\n    if (vsids.inHeap(var)) vsids.update(var);\n}"
+  },
+  "extra_params": {
+    "1": {
+      "lbd_queue_size": "50"
+    },
+    "2": {
+      "lbd_queue_size": "50"
+    },
+    "3": {
+      "lbd_queue_size": "50"
+    }
+  },
+  "best_result": {
+    "3": [
+      11580,
+      "void Solver::bump_var(int var, double coeff) {\n    if (coeff == 0.0) return;\n    double inc = var_inc * coeff;\n    activity[var] += inc;\n    const double LIMIT = 1e100;\n    if (activity[var] > LIMIT) {\n        const double SCALE = 1e-100;\n        for (int i = 1; i <= vars; ++i) activity[i] *= SCALE;\n        var_inc *= SCALE;\n    }\n    if (vsids.inHeap(var)) vsids.update(var);\n}",
+      11580
+    ]
+  },
+  "saved_at": 1776359073.2514114
+}

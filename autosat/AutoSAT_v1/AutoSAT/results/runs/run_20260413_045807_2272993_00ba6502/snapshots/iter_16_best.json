@@ -1,0 +1,7 @@
+{
+  "iter": 16,
+  "best_id": "17",
+  "time": 3024,
+  "code": "void Solver::bump_var(int var, double coeff) {\n    if (coeff == 0.0) return;                     // nothing to do\n\n    // increase activity of the variable\n    double delta = var_inc * coeff;\n    activity[var] += delta;\n\n    // global lazy rescaling: trigger only when the increment factor or a single activity\n    // becomes excessively large. This happens far less frequently than the original\n    // per‑variable check and avoids repeated full‑array rescales.\n    const double LIMIT = 1e100;\n    if (var_inc > LIMIT || activity[var] > LIMIT) {\n        const double SCALE = 1e-100;\n        // scale down all activities in a tight loop\n        for (int i = 1; i <= vars; ++i) activity[i] *= SCALE;\n        var_inc *= SCALE;\n    }\n\n    // keep the VSIDS heap up‑to‑date\n    if (vsids.inHeap(var)) vsids.update(var);\n}",
+  "PAR-2": 3024
+}

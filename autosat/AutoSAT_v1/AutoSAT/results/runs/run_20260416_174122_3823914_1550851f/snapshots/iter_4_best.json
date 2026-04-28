@@ -1,0 +1,7 @@
+{
+  "iter": 4,
+  "best_id": "5",
+  "time": 15742,
+  "code": "void Solver::bump_var(int var, double coeff) {\n    // Lazy global rescaling: only when the increment factor itself would overflow\n    static const double LIMIT = 1e100;\n    static const double SCALE = 1e-100;\n    if (var_inc > LIMIT) {\n        // Scale all activities in a tight loop\n        double *p = &activity[1];\n        for (int i = vars; i > 0; --i) {\n            *p++ *= SCALE;\n        }\n        var_inc *= SCALE;\n    }\n    // Update activity of the target variable\n    activity[var] += var_inc * coeff;\n    // Keep the VSIDS priority queue consistent\n    if (vsids.inHeap(var)) {\n        vsids.update(var);\n    }\n}",
+  "PAR-2": 20742
+}

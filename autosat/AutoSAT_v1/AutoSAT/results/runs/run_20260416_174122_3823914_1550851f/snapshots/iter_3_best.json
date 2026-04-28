@@ -1,0 +1,7 @@
+{
+  "iter": 3,
+  "best_id": "4",
+  "time": 11469,
+  "code": "void Solver::bump_var(int var, double coeff) {\n    // Fast path: update activity\n    activity[var] += var_inc * coeff;\n\n    // Rescale if activity exceeds safe limit\n    static const double LIMIT = 1e100;\n    static const double SCALE = 1e-100;\n    if (activity[var] > LIMIT) {\n        // Scale all variable activities in a tight loop\n        double *ptr = &activity[1];\n        for (int i = vars; i > 0; --i) {\n            *ptr++ *= SCALE;\n        }\n        var_inc *= SCALE;\n    }\n\n    // Keep VSIDS heap up‑to‑date\n    if (vsids.inHeap(var)) {\n        vsids.update(var);\n    }\n}",
+  "PAR-2": 11469
+}

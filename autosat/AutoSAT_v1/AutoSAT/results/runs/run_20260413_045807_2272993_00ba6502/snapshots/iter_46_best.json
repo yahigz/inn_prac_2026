@@ -1,0 +1,7 @@
+{
+  "iter": 46,
+  "best_id": "47",
+  "time": 2034,
+  "code": "void Solver::bump_var(int var, double coeff) {\n    double inc = var_inc * coeff;\n    // Prevent activity overflow by scaling down all activities when the next addition would exceed the limit\n    if (activity[var] + inc > 1e100) {\n        const double scale = 1e-90;               // bring values back into a safe range\n        for (int i = 1; i <= vars; ++i) activity[i] *= scale;\n        var_inc *= scale;\n    }\n    activity[var] += inc;\n    if (vsids.inHeap(var)) {\n        vsids.update(var);\n    }\n}",
+  "PAR-2": 2034
+}

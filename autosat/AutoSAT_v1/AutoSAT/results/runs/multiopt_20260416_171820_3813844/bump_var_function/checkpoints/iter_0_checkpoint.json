@@ -1,0 +1,44 @@
+{
+  "version": 1,
+  "run_id": "multiopt_20260416_171820_3813844",
+  "next_iter": 1,
+  "results": {
+    "time": {
+      "0": 0,
+      "1": 0
+    },
+    "prompt": {
+      "0": "",
+      "1": "void Solver::bump_var(int var, double coeff) {\n    // Compute increment based on current var_inc and coefficient\n    double inc = var_inc * coeff;\n    activity[var] += inc;\n\n    // Rescale activities if any exceed a safe upper bound to avoid overflow\n    const double ACTIVITY_LIMIT = 1e120;\n    if (activity[var] > ACTIVITY_LIMIT) {\n        const double SCALE_FACTOR = 1e-120;\n        for (int i = 1; i <= vars; ++i) {\n            activity[i] *= SCALE_FACTOR;\n        }\n        var_inc *= SCALE_FACTOR;\n    }\n\n    // Ensure the variable is correctly positioned in the VSIDS heap\n    if (vsids.inHeap(var)) {\n        vsids.update(var);\n    } else {\n        vsids.insert(var);\n    }\n}"
+    },
+    "PAR-2": {
+      "0": 0,
+      "1": 0
+    },
+    "satisfiable": {
+      "0": 0
+    },
+    "unsatisfiable": {
+      "0": 8
+    },
+    "timeout": {
+      "0": 0
+    }
+  },
+  "answers": {
+    "1": "void Solver::bump_var(int var, double coeff) {\n    // Compute increment based on current var_inc and coefficient\n    double inc = var_inc * coeff;\n    activity[var] += inc;\n\n    // Rescale activities if any exceed a safe upper bound to avoid overflow\n    const double ACTIVITY_LIMIT = 1e120;\n    if (activity[var] > ACTIVITY_LIMIT) {\n        const double SCALE_FACTOR = 1e-120;\n        for (int i = 1; i <= vars; ++i) {\n            activity[i] *= SCALE_FACTOR;\n        }\n        var_inc *= SCALE_FACTOR;\n    }\n\n    // Ensure the variable is correctly positioned in the VSIDS heap\n    if (vsids.inHeap(var)) {\n        vsids.update(var);\n    } else {\n        vsids.insert(var);\n    }\n}"
+  },
+  "extra_params": {
+    "1": {
+      "lbd_queue_size": "50"
+    }
+  },
+  "best_result": {
+    "1": [
+      0,
+      "void Solver::bump_var(int var, double coeff) {\n    // Compute increment based on current var_inc and coefficient\n    double inc = var_inc * coeff;\n    activity[var] += inc;\n\n    // Rescale activities if any exceed a safe upper bound to avoid overflow\n    const double ACTIVITY_LIMIT = 1e120;\n    if (activity[var] > ACTIVITY_LIMIT) {\n        const double SCALE_FACTOR = 1e-120;\n        for (int i = 1; i <= vars; ++i) {\n            activity[i] *= SCALE_FACTOR;\n        }\n        var_inc *= SCALE_FACTOR;\n    }\n\n    // Ensure the variable is correctly positioned in the VSIDS heap\n    if (vsids.inHeap(var)) {\n        vsids.update(var);\n    } else {\n        vsids.insert(var);\n    }\n}",
+      0
+    ]
+  },
+  "saved_at": 1776349126.531526
+}

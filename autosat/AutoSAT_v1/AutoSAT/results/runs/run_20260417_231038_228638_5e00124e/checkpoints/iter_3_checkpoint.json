@@ -1,0 +1,65 @@
+{
+  "version": 1,
+  "run_id": "run_20260417_231038_228638_5e00124e",
+  "next_iter": 4,
+  "results": {
+    "time": {
+      "0": 8957,
+      "1": 7712,
+      "2": 16499,
+      "3": 22752,
+      "4": 10457
+    },
+    "prompt": {
+      "0": "",
+      "1": "void Solver::bump_var(int var, double coeff) {\n    // Increase the activity of the variable proportionally to the coefficient.\n    activity[var] += var_inc * coeff;\n\n    // Prevent activity values from blowing up: if any activity exceeds a high threshold,\n    // uniformly scale down all activities and the increment factor.\n    const double MAX_ACTIVITY = 1e150;\n    if (activity[var] > MAX_ACTIVITY) {\n        double scale = 1e-150;\n        for (int i = 1; i <= vars; ++i) {\n            activity[i] *= scale;\n        }\n        var_inc *= scale;\n    }\n\n    // Keep the VSIDS heap consistent: update if already present, otherwise insert.\n    if (vsids.inHeap(var)) {\n        vsids.update(var);\n    } else {\n        vsids.insert(var);\n    }\n}",
+      "2": "else if (lbd_queue_size == 50 && (fast_lbd_sum / (double)lbd_queue_size) > 0.85 * (slow_lbd_sum / (double)(conflicts + 1))) restart();",
+      "3": "void Solver::restart() {\n    // Reset LBD statistics more aggressively\n    fast_lbd_sum = 0;\n    slow_lbd_sum = 0;\n    lbd_queue_size = 0;\n    lbd_queue_pos = 0;\n\n    // Backtrack to root level\n    backtrack(0);\n\n    // Aggressive rephasing: keep best phase most of the time,\n    // occasionally invert it or choose a random polarity.\n    int r = rand() % 100;\n    if (r < 70) {\n        // 70% keep the best local phase\n        for (int i = 1; i <= vars; ++i) saved[i] = local_best[i];\n    } else if (r < 85) {\n        // 15% invert the best local phase\n        for (int i = 1; i <= vars; ++i) saved[i] = -local_best[i];\n    } else {\n        // 15% assign a completely random phase\n        for (int i = 1; i <= vars; ++i) saved[i] = (rand() % 2) ? 1 : -1;\n    }\n}",
+      "4": "void Solver::rephase() {\n    // Reset the rephase counter.\n    rephases = 0;\n\n    // Decay the trail‑size threshold more gently (avoid too aggressive shrinking).\n    threshold = static_cast<int>(threshold * 0.95);\n\n    // Grow the rephase limit, but slower than the original implementation.\n    rephase_limit += 4096;\n\n    // ---- Phase‑saving strategy ----\n    // By default keep the best local phase for every variable.\n    for (int i = 1; i <= vars; ++i) {\n        saved[i] = local_best[i];\n    }\n\n    // To diversify the search, invert the phase of a small random subset\n    // of variables (e.g., ~5 % of the total). This helps escape local minima\n    // without destroying the overall learned polarity information.\n    int invert_cnt = vars / 20;               // 5 % of variables\n    for (int k = 0; k < invert_cnt; ++k) {\n        int v = 1 + rand() % vars;            // pick a random variable\n        saved[v] = -saved[v];                 // flip its saved polarity\n    }\n}"
+    },
+    "PAR-2": {
+      "0": 8957,
+      "1": 7712,
+      "2": 16499,
+      "3": 22752,
+      "4": 10457
+    },
+    "satisfiable": {
+      "0": 5
+    },
+    "unsatisfiable": {
+      "0": 7
+    },
+    "timeout": {
+      "0": 0
+    }
+  },
+  "answers": {
+    "1": "void Solver::bump_var(int var, double coeff) {\n    // Increase the activity of the variable proportionally to the coefficient.\n    activity[var] += var_inc * coeff;\n\n    // Prevent activity values from blowing up: if any activity exceeds a high threshold,\n    // uniformly scale down all activities and the increment factor.\n    const double MAX_ACTIVITY = 1e150;\n    if (activity[var] > MAX_ACTIVITY) {\n        double scale = 1e-150;\n        for (int i = 1; i <= vars; ++i) {\n            activity[i] *= scale;\n        }\n        var_inc *= scale;\n    }\n\n    // Keep the VSIDS heap consistent: update if already present, otherwise insert.\n    if (vsids.inHeap(var)) {\n        vsids.update(var);\n    } else {\n        vsids.insert(var);\n    }\n}",
+    "2": "else if (lbd_queue_size == 50 && (fast_lbd_sum / (double)lbd_queue_size) > 0.85 * (slow_lbd_sum / (double)(conflicts + 1))) restart();",
+    "3": "void Solver::restart() {\n    // Reset LBD statistics more aggressively\n    fast_lbd_sum = 0;\n    slow_lbd_sum = 0;\n    lbd_queue_size = 0;\n    lbd_queue_pos = 0;\n\n    // Backtrack to root level\n    backtrack(0);\n\n    // Aggressive rephasing: keep best phase most of the time,\n    // occasionally invert it or choose a random polarity.\n    int r = rand() % 100;\n    if (r < 70) {\n        // 70% keep the best local phase\n        for (int i = 1; i <= vars; ++i) saved[i] = local_best[i];\n    } else if (r < 85) {\n        // 15% invert the best local phase\n        for (int i = 1; i <= vars; ++i) saved[i] = -local_best[i];\n    } else {\n        // 15% assign a completely random phase\n        for (int i = 1; i <= vars; ++i) saved[i] = (rand() % 2) ? 1 : -1;\n    }\n}",
+    "4": "void Solver::rephase() {\n    // Reset the rephase counter.\n    rephases = 0;\n\n    // Decay the trail‑size threshold more gently (avoid too aggressive shrinking).\n    threshold = static_cast<int>(threshold * 0.95);\n\n    // Grow the rephase limit, but slower than the original implementation.\n    rephase_limit += 4096;\n\n    // ---- Phase‑saving strategy ----\n    // By default keep the best local phase for every variable.\n    for (int i = 1; i <= vars; ++i) {\n        saved[i] = local_best[i];\n    }\n\n    // To diversify the search, invert the phase of a small random subset\n    // of variables (e.g., ~5 % of the total). This helps escape local minima\n    // without destroying the overall learned polarity information.\n    int invert_cnt = vars / 20;               // 5 % of variables\n    for (int k = 0; k < invert_cnt; ++k) {\n        int v = 1 + rand() % vars;            // pick a random variable\n        saved[v] = -saved[v];                 // flip its saved polarity\n    }\n}"
+  },
+  "extra_params": {
+    "1": {
+      "lbd_queue_size": "50"
+    },
+    "2": {
+      "lbd_queue_size": "50"
+    },
+    "3": {
+      "lbd_queue_size": "50"
+    },
+    "4": {
+      "lbd_queue_size": "50"
+    }
+  },
+  "best_result": {
+    "4": [
+      10457,
+      "void Solver::rephase() {\n    // Reset the rephase counter.\n    rephases = 0;\n\n    // Decay the trail‑size threshold more gently (avoid too aggressive shrinking).\n    threshold = static_cast<int>(threshold * 0.95);\n\n    // Grow the rephase limit, but slower than the original implementation.\n    rephase_limit += 4096;\n\n    // ---- Phase‑saving strategy ----\n    // By default keep the best local phase for every variable.\n    for (int i = 1; i <= vars; ++i) {\n        saved[i] = local_best[i];\n    }\n\n    // To diversify the search, invert the phase of a small random subset\n    // of variables (e.g., ~5 % of the total). This helps escape local minima\n    // without destroying the overall learned polarity information.\n    int invert_cnt = vars / 20;               // 5 % of variables\n    for (int k = 0; k < invert_cnt; ++k) {\n        int v = 1 + rand() % vars;            // pick a random variable\n        saved[v] = -saved[v];                 // flip its saved polarity\n    }\n}",
+      10457
+    ]
+  },
+  "saved_at": 1776471551.745334
+}

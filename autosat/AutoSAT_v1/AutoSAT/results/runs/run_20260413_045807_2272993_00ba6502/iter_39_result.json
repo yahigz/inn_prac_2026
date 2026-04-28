@@ -1,0 +1,20 @@
+{
+  "time": {
+    "40": 2085
+  },
+  "prompt": {
+    "40": "void Solver::bump_var(int var, double coeff) {\n    const double ACT_LIMIT   = 1e100;\n    const double VARINC_LIMIT = 1e90;\n    const double RESCALE_FACTOR = 1e-100;\n\n    // increase activity of the variable\n    double inc = var_inc * coeff;\n    activity[var] += inc;\n\n    // if activity overflowed or var_inc is too large, rescale everything once\n    if (activity[var] > ACT_LIMIT || var_inc > VARINC_LIMIT) {\n        for (int i = 1; i <= vars; ++i) activity[i] *= RESCALE_FACTOR;\n        var_inc *= RESCALE_FACTOR;\n    }\n\n    // keep VSIDS heap up‑to‑date\n    if (vsids.inHeap(var)) vsids.update(var);\n}"
+  },
+  "PAR-2": {
+    "40": 2085
+  },
+  "satisfiable": {
+    "40": 19
+  },
+  "unsatisfiable": {
+    "40": 0
+  },
+  "timeout": {
+    "40": 0
+  }
+}

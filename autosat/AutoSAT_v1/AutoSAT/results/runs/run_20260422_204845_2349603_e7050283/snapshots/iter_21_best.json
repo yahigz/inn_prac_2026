@@ -1,0 +1,7 @@
+{
+  "iter": 21,
+  "best_id": "22",
+  "time": 18036,
+  "code": "else if (lbd_queue_size == 50 && fast_lbd_sum * conflicts > slow_lbd_sum * lbd_queue_size * 2) restart();",
+  "PAR-2": 28036
+}

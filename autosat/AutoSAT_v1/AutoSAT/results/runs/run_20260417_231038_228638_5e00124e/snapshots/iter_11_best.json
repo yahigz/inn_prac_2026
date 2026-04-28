@@ -1,0 +1,7 @@
+{
+  "iter": 11,
+  "best_id": "12",
+  "time": 11765,
+  "code": "void Solver::rephase() {\n    // Reset the rephase counter for the next cycle\n    rephases = 0;\n\n    // Make the threshold a little less aggressive than the original (0.9) \n    // to avoid too frequent rephasing while still allowing it to happen.\n    threshold = static_cast<int>(threshold * 0.95);\n\n    // Increase the limit more conservatively; this gives the solver\n    // a bit more room before the next forced rephase.\n    rephase_limit += 4096;\n\n    // ---- Phase‑selection strategy ---------------------------------\n    // Mix three different policies:\n    //   1) Keep the best phase observed so far (local_best)\n    //   2) Use the opposite of the best phase\n    //   3) Choose a completely random polarity\n    // The probabilities are tuned to favour the known good phase\n    // while still injecting diversity to escape stagnation.\n    for (int i = 1; i <= vars; ++i) {\n        int r = rand() % 100;\n        if (r < 45) {                     // 45% keep the best observed phase\n            saved[i] = local_best[i];\n        } else if (r < 75) {              // 30% flip the best phase\n            saved[i] = -local_best[i];\n        } else {                          // 25% random polarity\n            saved[i] = (rand() & 1) ? 1 : -1;\n        }\n    }\n    // ----------------------------------------------------------------\n}",
+  "PAR-2": 11765
+}

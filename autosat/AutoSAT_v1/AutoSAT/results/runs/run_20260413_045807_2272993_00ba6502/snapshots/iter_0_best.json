@@ -1,0 +1,7 @@
+{
+  "iter": 0,
+  "best_id": "1",
+  "time": 2256,
+  "code": "void Solver::bump_var(int var, double coeff) {\n    // Guard against invalid variable indices\n    if (var < 1 || var > vars) return;\n\n    // Increment activity with the given coefficient\n    double delta = var_inc * coeff;\n    activity[var] += delta;\n\n    // Rescale all activities if any exceeds a safe upper bound\n    const double ACTIVITY_LIMIT = 1e150;\n    if (activity[var] > ACTIVITY_LIMIT) {\n        const double RESCALE_FACTOR = 1e-150;\n        for (int i = 1; i <= vars; ++i) {\n            activity[i] *= RESCALE_FACTOR;\n        }\n        var_inc *= RESCALE_FACTOR;\n    }\n\n    // Keep the VSIDS heap up‑to‑date\n    if (vsids.inHeap(var)) {\n        vsids.update(var);\n    }\n}",
+  "PAR-2": 2256
+}

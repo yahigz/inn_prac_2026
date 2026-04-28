@@ -1,0 +1,20 @@
+{
+  "time": {
+    "56": 11174
+  },
+  "prompt": {
+    "56": "void Solver::rephase() {\n    // Reset the rephase counter so we start a fresh counting period\n    rephases = 0;\n\n    // Make the threshold a bit tighter (10% reduction) so that the next\n    // rephase can happen earlier if the trail grows again.\n    threshold = static_cast<int>(threshold * 0.90);\n\n    // Dynamically increase the rephase limit: the more conflicts we have\n    // solved, the larger the limit becomes, giving the solver more room\n    // before the next forced rephase.\n    // The base increment is 8192 (as in the original code) plus an\n    // extra amount that grows with the number of conflicts.\n    rephase_limit += 8192 + (conflicts / 1000) * 1024;\n\n    // Update the saved phase information.\n    // 70% of the time we keep the best local assignment,\n    // 20% we flip it, and 10% we pick a completely random phase.\n    int r = rand() % 100;\n    if (r < 70) {\n        // Use the best local assignment found so far\n        for (int i = 1; i <= vars; ++i) saved[i] = local_best[i];\n    } else if (r < 90) {\n        // Use the opposite of the best local assignment\n        for (int i = 1; i <= vars; ++i) saved[i] = -local_best[i];\n    } else {\n        // Random phase assignment\n        for (int i = 1; i <= vars; ++i) saved[i] = (rand() & 1) ? 1 : -1;\n    }\n}"
+  },
+  "PAR-2": {
+    "56": 11174
+  },
+  "satisfiable": {
+    "56": 5
+  },
+  "unsatisfiable": {
+    "56": 7
+  },
+  "timeout": {
+    "56": 0
+  }
+}

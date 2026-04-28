@@ -1,0 +1,20 @@
+{
+  "time": {
+    "15": 55781
+  },
+  "prompt": {
+    "15": "void Solver::restart() {\n    // Reset LBD statistics\n    fast_lbd_sum = 0;\n    lbd_queue_size = 0;\n    lbd_queue_pos = 0;\n    slow_lbd_sum = 0;\n\n    // Backtrack to root level\n    backtrack(0);\n\n    // Reset activity increment to avoid overflow and give fresh decay\n    var_inc = 1.0;\n\n    // Rephase variables: use recent best, opposite, or random with new probabilities\n    int r = rand() % 100;\n    if (r < 50) {\n        // 50% chance: keep the best phase seen so far\n        for (int i = 1; i <= vars; ++i) saved[i] = local_best[i];\n    } else if (r < 75) {\n        // 25% chance: flip the best phase\n        for (int i = 1; i <= vars; ++i) saved[i] = -local_best[i];\n    } else {\n        // 25% chance: assign random phase\n        for (int i = 1; i <= vars; ++i) saved[i] = (rand() & 1) ? 1 : -1;\n    }\n\n    // Re‑insert all variables into VSIDS heap to refresh decision order\n    for (int i = 1; i <= vars; ++i) {\n        if (!vsids.inHeap(i)) vsids.insert(i);\n    }\n}"
+  },
+  "PAR-2": {
+    "15": 110781
+  },
+  "satisfiable": {
+    "15": 0
+  },
+  "unsatisfiable": {
+    "15": 1
+  },
+  "timeout": {
+    "15": 11
+  }
+}

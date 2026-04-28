@@ -1,0 +1,7 @@
+{
+  "iter": 20,
+  "best_id": "21",
+  "time": 2401,
+  "code": "void Solver::bump_var(int var, double coeff) {\n    double inc = var_inc * coeff;\n    double new_act = activity[var] + inc;\n    activity[var] = new_act;\n    if (new_act > 1e100) {\n        const double SCALE = 1e-100;\n        for (int i = 1; i <= vars; ++i) activity[i] *= SCALE;\n        var_inc *= SCALE;\n    }\n    if (vsids.inHeap(var)) vsids.update(var);\n}",
+  "PAR-2": 2401
+}

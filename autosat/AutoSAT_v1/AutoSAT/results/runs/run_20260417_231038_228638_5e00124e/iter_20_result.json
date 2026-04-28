@@ -1,0 +1,20 @@
+{
+  "time": {
+    "21": 10919
+  },
+  "prompt": {
+    "21": "void Solver::bump_var(int var, double coeff) {\n    // Increment activity with the current increment and coefficient\n    double inc = var_inc * coeff;\n    activity[var] += inc;\n\n    // Lazy rescaling: only rescale when a single variable exceeds a high threshold\n    // This reduces the frequency of the O(vars) loop.\n    const double HIGH_THRESHOLD = 1e120; // higher than original 1e100\n    if (activity[var] > HIGH_THRESHOLD) {\n        // Scale down all activities and the increment to avoid overflow.\n        const double SCALE_FACTOR = 1e-120;\n        for (int i = 1; i <= vars; ++i) {\n            activity[i] *= SCALE_FACTOR;\n        }\n        var_inc *= SCALE_FACTOR;\n    }\n\n    // Keep the VSIDS heap up‑to‑date.\n    // If the variable is already in the heap, update its position;\n    // otherwise insert it (this can happen after backtrack).\n    if (vsids.inHeap(var)) {\n        vsids.update(var);\n    } else {\n        vsids.insert(var);\n    }\n}"
+  },
+  "PAR-2": {
+    "21": 10919
+  },
+  "satisfiable": {
+    "21": 5
+  },
+  "unsatisfiable": {
+    "21": 7
+  },
+  "timeout": {
+    "21": 0
+  }
+}

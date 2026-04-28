@@ -1,0 +1,35 @@
+{
+  "version": 1,
+  "run_id": "multiopt_20260415_163247_3376460__restart_condition",
+  "next_iter": 4,
+  "results": {
+    "time": {
+      "0": 0,
+      "4": 1930
+    },
+    "prompt": {
+      "0": " ",
+      "4": "else if (lbd_queue_size == 50 && (double)fast_lbd_sum / lbd_queue_size > 1.2 * (double)slow_lbd_sum / (conflicts + 1)) restart();"
+    },
+    "PAR-2": {
+      "0": 1,
+      "4": 1930
+    }
+  },
+  "answers": {
+    "4": "else if (lbd_queue_size == 50 && (double)fast_lbd_sum / lbd_queue_size > 1.2 * (double)slow_lbd_sum / (conflicts + 1)) restart();"
+  },
+  "extra_params": {
+    "4": {
+      "lbd_queue_size": "50"
+    }
+  },
+  "best_result": {
+    "4": [
+      1930,
+      "else if (lbd_queue_size == 50 && (double)fast_lbd_sum / lbd_queue_size > 1.2 * (double)slow_lbd_sum / (conflicts + 1)) restart();",
+      1930
+    ]
+  },
+  "saved_at": 1776268381.0198061
+}

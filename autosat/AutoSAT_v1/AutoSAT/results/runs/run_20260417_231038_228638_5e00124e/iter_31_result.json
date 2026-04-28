@@ -1,0 +1,20 @@
+{
+  "time": {
+    "32": 9399
+  },
+  "prompt": {
+    "32": "void Solver::rephase() {\n    // Reset the rephase counter.\n    rephases = 0;\n\n    // Make the next rephase a bit harder to trigger.\n    // Reduce the threshold slightly (instead of the aggressive 0.9 factor).\n    threshold = static_cast<int>(threshold * 0.95);\n\n    // Grow the rephase limit adaptively so that rephases become less frequent\n    // as the search progresses, but still allow occasional adjustments.\n    rephase_limit = static_cast<int>(rephase_limit * 1.2) + 1024;\n\n    // Choose a new saved polarity strategy.\n    // 40 % – reuse the best phase seen so far,\n    // 30 % – use the opposite of the best phase,\n    // 30 % – pick a completely random polarity for each variable.\n    int r = rand() % 100;\n    if (r < 40) {\n        // Use the best local assignment found so far.\n        for (int i = 1; i <= vars; ++i) saved[i] = local_best[i];\n    } else if (r < 70) {\n        // Use the opposite polarity of the best local assignment.\n        for (int i = 1; i <= vars; ++i) saved[i] = -local_best[i];\n    } else {\n        // Random polarity for each variable.\n        for (int i = 1; i <= vars; ++i) saved[i] = (rand() & 1) ? 1 : -1;\n    }\n}"
+  },
+  "PAR-2": {
+    "32": 9399
+  },
+  "satisfiable": {
+    "32": 5
+  },
+  "unsatisfiable": {
+    "32": 7
+  },
+  "timeout": {
+    "32": 0
+  }
+}

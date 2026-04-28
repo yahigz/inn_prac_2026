@@ -1,0 +1,20 @@
+{
+  "time": {
+    "28": 7493
+  },
+  "prompt": {
+    "28": "void Solver::rephase() {\n    // 1. reset the rephase counter\n    rephases = 0;\n\n    // 2. make the threshold shrink a bit more gently (avoid too aggressive shrinking)\n    threshold = static_cast<int>(threshold * 0.95);\n\n    // 3. increase the limit so that we do not rephase too often\n    rephase_limit += 4096;\n\n    // 4. choose a new phase assignment for all variables\n    //    - 20 % : adopt the best phase seen so far (local_best)\n    //    - 10 % : invert the best phase\n    //    - 60 % : keep the current saved phase (no change)\n    //    - 10 % : random polarity\n    int r = rand() % 100;\n    if (r < 20) {\n        // adopt local best\n        for (int i = 1; i <= vars; ++i) saved[i] = local_best[i];\n    } else if (r < 30) {\n        // invert local best\n        for (int i = 1; i <= vars; ++i) saved[i] = -local_best[i];\n    } else if (r < 90) {\n        // keep current saved phases – nothing to do\n    } else {\n        // random polarity\n        for (int i = 1; i <= vars; ++i) saved[i] = (rand() & 1) ? 1 : -1;\n    }\n\n    // 5. slightly decay VSIDS activity to diversify the search space\n    var_inc *= 0.9;                     // decay the increment factor\n    for (int v = 1; v <= vars; ++v) {\n        activity[v] *= 0.9;             // decay activity scores\n        if (vsids.inHeap(v)) vsids.update(v);\n    }\n}"
+  },
+  "PAR-2": {
+    "28": 7493
+  },
+  "satisfiable": {
+    "28": 5
+  },
+  "unsatisfiable": {
+    "28": 7
+  },
+  "timeout": {
+    "28": 0
+  }
+}

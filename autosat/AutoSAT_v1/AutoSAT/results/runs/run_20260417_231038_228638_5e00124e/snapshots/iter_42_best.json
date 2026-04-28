@@ -1,0 +1,7 @@
+{
+  "iter": 42,
+  "best_id": "43",
+  "time": 10168,
+  "code": "void Solver::restart() {\n    // Reset LBD statistics\n    fast_lbd_sum = 0;\n    lbd_queue_size = 0;\n    lbd_queue_pos = 0;\n\n    // Reset activity scaling to avoid overflow and give fresh VSIDS scores\n    var_inc = 1.0;\n    for (int v = 1; v <= vars; ++v) {\n        activity[v] = 1.0;\n    }\n\n    // Clear VSIDS heap and re‑insert all unassigned variables\n    while (!vsids.empty()) vsids.pop();\n    for (int v = 1; v <= vars; ++v) {\n        if (value[v] == 0) {\n            if (!vsids.inHeap(v)) vsids.insert(v);\n        }\n    }\n\n    // Backtrack to root level\n    backtrack(0);\n\n    // Phase selection: mostly use the best local phase, occasionally random\n    int r = rand() % 100;\n    if (r < 70) {\n        for (int i = 1; i <= vars; ++i) saved[i] = local_best[i];\n    } else {\n        for (int i = 1; i <= vars; ++i) saved[i] = (rand() & 1) ? 1 : -1;\n    }\n}",
+  "PAR-2": 10168
+}

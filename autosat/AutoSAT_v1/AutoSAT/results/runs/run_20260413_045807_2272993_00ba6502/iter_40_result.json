@@ -1,0 +1,20 @@
+{
+  "time": {
+    "41": 2256
+  },
+  "prompt": {
+    "41": "void Solver::bump_var(int var, double coeff) {\n    // compile‑time constants, no reallocation on each call\n    static const double ACT_LIMIT   = 1e100;\n    static const double RESCALE_FAC = 1e-100;\n\n    // increase activity\n    activity[var] += var_inc * coeff;\n\n    // if any activity exceeds the safe limit, rescale everything once\n    if (activity[var] > ACT_LIMIT) {\n        for (int i = 1; i <= vars; ++i) activity[i] *= RESCALE_FAC;\n        var_inc *= RESCALE_FAC;\n    }\n\n    // keep the VSIDS heap consistent\n    if (vsids.inHeap(var)) vsids.update(var);\n}"
+  },
+  "PAR-2": {
+    "41": 2256
+  },
+  "satisfiable": {
+    "41": 19
+  },
+  "unsatisfiable": {
+    "41": 0
+  },
+  "timeout": {
+    "41": 0
+  }
+}

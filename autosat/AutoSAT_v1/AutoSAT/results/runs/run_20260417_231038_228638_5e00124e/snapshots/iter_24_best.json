@@ -1,0 +1,7 @@
+{
+  "iter": 24,
+  "best_id": "25",
+  "time": 11602,
+  "code": "void Solver::bump_var(int var, double coeff) {\n    // Compute the increment once\n    double inc = var_inc * coeff;\n    activity[var] += inc;\n\n    // Rescale all activities only when the current variable exceeds the safe bound.\n    // This avoids the costly O(vars) loop on every bump.\n    if (activity[var] > 1e100) {\n        const double scale = 1e-100;\n        for (int i = 1; i <= vars; ++i) activity[i] *= scale;\n        var_inc *= scale;\n    }\n\n    // Update the VSIDS heap only if the variable is already present.\n    // Skip the update for negligible increments to reduce heap churn.\n    if (vsids.inHeap(var) && inc > 1e-12) {\n        vsids.update(var);\n    }\n}",
+  "PAR-2": 11602
+}

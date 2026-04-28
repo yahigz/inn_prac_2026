@@ -1,0 +1,20 @@
+{
+  "time": {
+    "29": 51209
+  },
+  "prompt": {
+    "29": "void Solver::bump_var(int var, double coeff) {\n    // increase activity of the variable\n    double inc = var_inc * coeff;\n    activity[var] += inc;\n\n    // if a single activity becomes too large, rescale all activities to avoid overflow\n    if (activity[var] > 1e90) {\n        const double scale = 1e-90;\n        for (int i = 1; i <= vars; ++i) activity[i] *= scale;\n        var_inc *= scale;\n    }\n\n    // periodic gentle decay of all activities (once every 1024 bumps) to keep the distribution fresh\n    static unsigned int bump_counter = 0;\n    if ((++bump_counter & 1023) == 0) { // every 1024 bumps\n        const double decay = 0.95;\n        for (int i = 1; i <= vars; ++i) activity[i] *= decay;\n        var_inc *= decay;\n    }\n\n    // keep the VSIDS heap up‑to‑date\n    if (vsids.inHeap(var)) vsids.update(var);\n}"
+  },
+  "PAR-2": {
+    "29": 86209
+  },
+  "satisfiable": {
+    "29": 1
+  },
+  "unsatisfiable": {
+    "29": 4
+  },
+  "timeout": {
+    "29": 7
+  }
+}

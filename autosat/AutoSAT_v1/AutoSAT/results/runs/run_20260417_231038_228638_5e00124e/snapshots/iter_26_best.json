@@ -1,0 +1,7 @@
+{
+  "iter": 26,
+  "best_id": "27",
+  "time": 14484,
+  "code": "void Solver::restart() {\n    // Reset LBD statistics\n    fast_lbd_sum = 0;\n    lbd_queue_size = 0;\n    lbd_queue_pos = 0;\n\n    // Backtrack to root level\n    backtrack(0);\n\n    // Decay VSIDS activity to diversify the search space\n    for (int v = 1; v <= vars; ++v) {\n        activity[v] *= 0.5;\n        if (vsids.inHeap(v)) vsids.update(v);\n    }\n\n    // Rephase variables: 70% keep local best, 10% invert, 20% random\n    int r = rand() % 100;\n    if (r < 70) {\n        for (int i = 1; i <= vars; ++i) saved[i] = local_best[i];\n    } else if (r < 80) {\n        for (int i = 1; i <= vars; ++i) saved[i] = -local_best[i];\n    } else {\n        for (int i = 1; i <= vars; ++i) saved[i] = (rand() & 1) ? 1 : -1;\n    }\n\n    // Reset rephase and reduce counters/limits\n    rephases = 0;\n    reduces = 0;\n    rephase_limit = 8192;\n    reduce_limit = 512;\n}",
+  "PAR-2": 14484
+}

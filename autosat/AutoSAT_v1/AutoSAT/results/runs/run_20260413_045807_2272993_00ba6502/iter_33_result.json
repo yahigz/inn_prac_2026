@@ -1,0 +1,20 @@
+{
+  "time": {
+    "34": 2422
+  },
+  "prompt": {
+    "34": "inline void Solver::bump_var(int var, double coeff) {\n    double inc = var_inc * coeff;\n    activity[var] += inc;\n    if (activity[var] > 1e100) {\n        const double scale = 1e-100;\n        for (int i = 1; i <= vars; ++i) activity[i] *= scale;\n        var_inc *= scale;\n    }\n    vsids.update(var);\n}"
+  },
+  "PAR-2": {
+    "34": 2422
+  },
+  "satisfiable": {
+    "34": 19
+  },
+  "unsatisfiable": {
+    "34": 0
+  },
+  "timeout": {
+    "34": 0
+  }
+}

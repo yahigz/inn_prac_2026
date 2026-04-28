@@ -1,0 +1,17 @@
+{
+  "0": {
+    "time": 0,
+    "PAR-2": 0,
+    "prompt": ""
+  },
+  "1": {
+    "time": 0,
+    "PAR-2": 0,
+    "prompt": "void Solver::bump_var(int var, double coeff) {\n    // Compute increment and update activity\n    double inc = var_inc * coeff;\n    activity[var] += inc;\n\n    // Prevent activity overflow by rescaling all activities if a threshold is exceeded\n    const double ACTIVITY_LIMIT = 1e150;\n    if (activity[var] > ACTIVITY_LIMIT) {\n        double scale = 1e-150;\n        for (int i = 1; i <= vars; ++i) {\n            activity[i] *= scale;\n        }\n        var_inc *= scale;\n    }\n\n    // Keep the VSIDS heap consistent\n    if (vsids.inHeap(var)) {\n        vsids.update(var);\n    }\n}"
+  },
+  "2": {
+    "time": 0,
+    "PAR-2": 0,
+    "prompt": "void Solver::bump_var(int var, double coeff) {\n    // Increase the activity of the variable by a scaled increment.\n    double inc = var_inc * coeff;\n    activity[var] += inc;\n\n    // If any activity grows beyond a safe threshold, rescale all activities\n    // and the increment factor to avoid floating‑point overflow.\n    const double RESCALE_LIMIT = 1e150;\n    if (activity[var] > RESCALE_LIMIT) {\n        const double SCALE_FACTOR = 1e-150;\n        for (int i = 1; i <= vars; ++i) {\n            activity[i] *= SCALE_FACTOR;\n        }\n        var_inc *= SCALE_FACTOR;\n    }\n\n    // Keep the VSIDS priority queue up‑to‑date.\n    if (vsids.inHeap(var)) {\n        vsids.update(var);\n    }\n}"
+  }
+}

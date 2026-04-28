@@ -1,0 +1,20 @@
+{
+  "time": {
+    "20": 1435
+  },
+  "prompt": {
+    "20": "void Solver::restart() {\n    // Aggressively reset LBD statistics\n    fast_lbd_sum = 0;\n    lbd_queue_size = 0;\n    lbd_queue_pos = 0;\n    slow_lbd_sum = 0;\n\n    // Backtrack to the root level\n    backtrack(0);\n\n    // Re‑phase variables: mix best, opposite, and random choices\n    int r = rand() % 100;\n    if (r < 50) {\n        for (int i = 1; i <= vars; ++i) saved[i] = local_best[i];\n    } else if (r < 75) {\n        for (int i = 1; i <= vars; ++i) saved[i] = -local_best[i];\n    } else {\n        for (int i = 1; i <= vars; ++i) saved[i] = (rand() & 1) ? 1 : -1;\n    }\n\n    // Decay variable activity to diversify future decisions\n    var_inc = 1.0;\n    for (int i = 1; i <= vars; ++i) {\n        activity[i] *= 0.5;\n        if (!vsids.inHeap(i)) vsids.insert(i);\n    }\n}"
+  },
+  "PAR-2": {
+    "20": 1435
+  },
+  "satisfiable": {
+    "20": 19
+  },
+  "unsatisfiable": {
+    "20": 0
+  },
+  "timeout": {
+    "20": 0
+  }
+}

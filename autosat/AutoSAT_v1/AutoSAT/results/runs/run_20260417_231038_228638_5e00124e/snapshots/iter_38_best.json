@@ -1,0 +1,7 @@
+{
+  "iter": 38,
+  "best_id": "39",
+  "time": 27260,
+  "code": "void Solver::restart() {\n    // Reset LBD statistics more aggressively\n    fast_lbd_sum = 0;\n    slow_lbd_sum = 0;\n    lbd_queue_size = 0;\n    lbd_queue_pos = 0;\n\n    // Backtrack to root level\n    backtrack(0);\n\n    // Rephase saved phases with a new strategy\n    int r = rand() % 100;\n    if (r < 30) {\n        // Use the best local assignment found so far\n        for (int i = 1; i <= vars; i++) saved[i] = local_best[i];\n    } else if (r < 60) {\n        // Use the opposite of the best local assignment\n        for (int i = 1; i <= vars; i++) saved[i] = -local_best[i];\n    } else {\n        // Randomly assign phases\n        for (int i = 1; i <= vars; i++) saved[i] = (rand() % 2) ? 1 : -1;\n    }\n\n    // Reset rephase counters to give the new phases more effect\n    rephases = 0;\n    rephase_limit += 4096;\n}",
+  "PAR-2": 32260
+}

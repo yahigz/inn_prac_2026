@@ -1,0 +1,20 @@
+{
+  "time": {
+    "17": 17330
+  },
+  "prompt": {
+    "17": "void Solver::rephase() {\n    // 1. Reset the rephase counter – start a fresh rephase cycle.\n    rephases = 0;\n\n    // 2. Make the trail‑size threshold more aggressive.\n    //    Reduce it by 15 % but never let it drop below the number of variables\n    //    (so we keep a reasonable lower bound).\n    threshold = std::max((int)(threshold * 0.85), vars);\n\n    // 3. Grow the rephase limit adaptively.\n    //    Add a base increment (4096) plus half of the current limit.\n    //    This lets the solver stay longer in a rephase‑rich phase when it is\n    //    making progress, but still forces a new rephase eventually.\n    rephase_limit += 4096 + rephase_limit / 2;\n\n    // 4. Diversify the saved phases after a rephase.\n    //    Randomly choose one of three strategies:\n    //      – reuse the best local phase,\n    //      – use the opposite of the best local phase,\n    //      – pick a completely random polarity.\n    int mode = rand() % 3;\n    if (mode == 0) {\n        for (int i = 1; i <= vars; ++i) saved[i] = local_best[i];\n    } else if (mode == 1) {\n        for (int i = 1; i <= vars; ++i) saved[i] = -local_best[i];\n    } else {\n        for (int i = 1; i <= vars; ++i) saved[i] = (rand() % 2) ? 1 : -1;\n    }\n}"
+  },
+  "PAR-2": {
+    "17": 17330
+  },
+  "satisfiable": {
+    "17": 19
+  },
+  "unsatisfiable": {
+    "17": 0
+  },
+  "timeout": {
+    "17": 0
+  }
+}

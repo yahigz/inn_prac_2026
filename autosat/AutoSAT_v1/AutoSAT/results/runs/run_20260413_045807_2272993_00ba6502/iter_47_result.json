@@ -1,0 +1,20 @@
+{
+  "time": {
+    "48": 2125
+  },
+  "prompt": {
+    "48": "void Solver::bump_var(int var, double coeff) {\n    // Compute increment based on current var_inc\n    double inc = var_inc * coeff;\n    activity[var] += inc;\n\n    // Lazy global rescaling: only when the global increment factor grows too large.\n    // This avoids frequent per-variable overflow checks and reduces the cost of the scaling loop.\n    if (var_inc > 1e100) {\n        const double scale = 1e-100;          // bring values back into a safe range\n        for (int i = 1; i <= vars; ++i) {\n            activity[i] *= scale;\n        }\n        var_inc *= scale;\n    }\n\n    // Keep the VSIDS heap up‑to‑date\n    if (vsids.inHeap(var)) {\n        vsids.update(var);\n    }\n}"
+  },
+  "PAR-2": {
+    "48": 2125
+  },
+  "satisfiable": {
+    "48": 19
+  },
+  "unsatisfiable": {
+    "48": 0
+  },
+  "timeout": {
+    "48": 0
+  }
+}

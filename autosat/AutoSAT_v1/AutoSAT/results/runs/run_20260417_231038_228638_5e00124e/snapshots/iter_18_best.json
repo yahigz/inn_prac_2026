@@ -1,0 +1,7 @@
+{
+  "iter": 18,
+  "best_id": "19",
+  "time": 56022,
+  "code": "void Solver::restart() {\n    // Reset LBD statistics\n    fast_lbd_sum = 0;\n    slow_lbd_sum = 0;\n    lbd_queue_size = 0;\n    lbd_queue_pos = 0;\n    // Reset activity increment to avoid overflow and give fresh VSIDS scores\n    var_inc = 1.0;\n    // Backtrack completely to root level\n    backtrack(0);\n    // Re‑phase variables: majority keep the best local phase, some are inverted,\n    // and a small fraction are assigned randomly.\n    int r = rand() % 100;\n    if (r < 70) {\n        for (int i = 1; i <= vars; ++i) saved[i] = local_best[i];\n    } else if (r < 85) {\n        for (int i = 1; i <= vars; ++i) saved[i] = -local_best[i];\n    } else {\n        for (int i = 1; i <= vars; ++i) saved[i] = (rand() & 1) ? 1 : -1;\n    }\n}",
+  "PAR-2": 111022
+}

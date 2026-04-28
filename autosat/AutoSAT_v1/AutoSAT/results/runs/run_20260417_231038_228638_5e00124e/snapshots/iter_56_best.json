@@ -1,0 +1,7 @@
+{
+  "iter": 56,
+  "best_id": "57",
+  "time": 9261,
+  "code": "void Solver::bump_var(int var, double coeff) {\n    // Increment activity with the current increment factor scaled by coeff\n    activity[var] += var_inc * coeff;\n\n    // If any activity becomes too large, rescale all activities and the increment factor.\n    // This prevents floating‑point overflow and keeps the relative ordering stable.\n    const double RESCALE_THRESHOLD = 1e80;\n    if (activity[var] > RESCALE_THRESHOLD) {\n        double scale = 1e-80;                     // bring values back to a safe range\n        for (int i = 1; i <= vars; ++i) {\n            activity[i] *= scale;\n        }\n        var_inc *= scale;\n    }\n\n    // Keep the VSIDS heap consistent: if the variable is already in the heap,\n    // update its position according to the new activity.\n    if (vsids.inHeap(var)) {\n        vsids.update(var);\n    }\n}",
+  "PAR-2": 9261
+}

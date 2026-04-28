@@ -1,0 +1,20 @@
+{
+  "time": {
+    "5": 47341
+  },
+  "prompt": {
+    "5": "void Solver::bump_var(int var, double coeff) {\n    // Fast‑path: no bump needed.\n    if (coeff == 0.0) return;\n\n    // Global scaling factor to avoid costly full‑vector rescales.\n    static double scale = 1.0;\n\n    // Compute the increment adjusted for the current scale.\n    double inc = var_inc * coeff;\n    double inc_scaled = inc / scale;\n\n    // Update the (scaled) activity of the variable.\n    activity[var] += inc_scaled;\n\n    // If the true activity would overflow, adjust the global scale\n    // and the increment factor instead of iterating over all variables.\n    if (activity[var] * scale > 1e100) {\n        scale *= 1e-100;          // shrink all activities lazily\n        var_inc *= 1e-100;        // keep the relative bump magnitude\n        // No explicit loop over all variables is needed.\n    }\n\n    // Keep the VSIDS heap up‑to‑date.\n    if (vsids.inHeap(var)) vsids.update(var);\n}"
+  },
+  "PAR-2": {
+    "5": 92341
+  },
+  "satisfiable": {
+    "5": 0
+  },
+  "unsatisfiable": {
+    "5": 3
+  },
+  "timeout": {
+    "5": 9
+  }
+}

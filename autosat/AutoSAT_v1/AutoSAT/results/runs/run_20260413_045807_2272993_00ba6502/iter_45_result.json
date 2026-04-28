@@ -1,0 +1,20 @@
+{
+  "time": {
+    "46": 1838
+  },
+  "prompt": {
+    "46": "void Solver::bump_var(int var, double coeff) {\n    double inc = var_inc * coeff;\n    // Detect potential overflow before performing the addition\n    if (activity[var] > 1e100 - inc) {\n        const double scale = 1e-100;\n        // Scale down all variable activities to keep numbers in a safe range\n        for (int i = 1; i <= vars; ++i) {\n            activity[i] *= scale;\n        }\n        // Scale down the increment factor as well\n        var_inc *= scale;\n    }\n    activity[var] += inc;\n    if (vsids.inHeap(var)) {\n        vsids.update(var);\n    }\n}"
+  },
+  "PAR-2": {
+    "46": 1838
+  },
+  "satisfiable": {
+    "46": 19
+  },
+  "unsatisfiable": {
+    "46": 0
+  },
+  "timeout": {
+    "46": 0
+  }
+}

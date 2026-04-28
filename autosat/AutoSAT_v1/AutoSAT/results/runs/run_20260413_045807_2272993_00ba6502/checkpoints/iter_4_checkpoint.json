@@ -1,0 +1,72 @@
+{
+  "version": 1,
+  "run_id": "run_20260413_045807_2272993_00ba6502",
+  "next_iter": 5,
+  "results": {
+    "time": {
+      "0": 1858,
+      "1": 2256,
+      "2": 2247,
+      "3": 1797,
+      "4": 2228,
+      "5": 2379
+    },
+    "prompt": {
+      "0": "",
+      "1": "void Solver::bump_var(int var, double coeff) {\n    // Guard against invalid variable indices\n    if (var < 1 || var > vars) return;\n\n    // Increment activity with the given coefficient\n    double delta = var_inc * coeff;\n    activity[var] += delta;\n\n    // Rescale all activities if any exceeds a safe upper bound\n    const double ACTIVITY_LIMIT = 1e150;\n    if (activity[var] > ACTIVITY_LIMIT) {\n        const double RESCALE_FACTOR = 1e-150;\n        for (int i = 1; i <= vars; ++i) {\n            activity[i] *= RESCALE_FACTOR;\n        }\n        var_inc *= RESCALE_FACTOR;\n    }\n\n    // Keep the VSIDS heap up‑to‑date\n    if (vsids.inHeap(var)) {\n        vsids.update(var);\n    }\n}",
+      "2": "void Solver::bump_var(int var, double coeff) {\n    // Compute increment based on current var_inc and provided coefficient\n    double inc = var_inc * coeff;\n    activity[var] += inc;\n\n    // Rescale activities if any value exceeds a safe threshold to avoid overflow\n    const double ACTIVITY_LIMIT = 1e150;\n    if (activity[var] > ACTIVITY_LIMIT) {\n        double scale = 1e-150;\n        for (int i = 1; i <= vars; ++i) {\n            activity[i] *= scale;\n        }\n        var_inc *= scale;\n    }\n\n    // Ensure the variable is correctly positioned in the VSIDS heap\n    if (vsids.inHeap(var)) {\n        vsids.update(var);\n    } else {\n        vsids.insert(var);\n    }\n}",
+      "3": "void Solver::bump_var(int var, double coeff) {\n    double inc = var_inc * coeff;\n    activity[var] += inc;\n\n    const double ACTIVITY_LIMIT = 1e300;   // very high to avoid frequent rescales\n    if (activity[var] > ACTIVITY_LIMIT) {\n        const double SCALE = 1e-300;\n        for (int i = 1; i <= vars; ++i) activity[i] *= SCALE;\n        var_inc *= SCALE;\n    }\n\n    if (vsids.inHeap(var)) vsids.update(var);\n}",
+      "4": "void Solver::bump_var(int var, double coeff) {\n    // compute increment\n    double inc = var_inc * coeff;\n    activity[var] += inc;\n\n    // Rescale when a single activity becomes too large\n    const double ACT_LIMIT = 1e150;\n    const double SCALE = 1e-100;\n    if (activity[var] > ACT_LIMIT) {\n        for (int i = 1; i <= vars; ++i) activity[i] *= SCALE;\n        var_inc *= SCALE;\n    }\n\n    // Also keep var_inc itself bounded to avoid overflow in future increments\n    if (var_inc > ACT_LIMIT) {\n        for (int i = 1; i <= vars; ++i) activity[i] *= SCALE;\n        var_inc *= SCALE;\n    }\n\n    // update VSIDS heap if needed\n    if (vsids.inHeap(var)) vsids.update(var);\n}",
+      "5": "void Solver::bump_var(int var, double coeff) {\n    double inc = var_inc * coeff;\n    double newAct = activity[var] + inc;\n    activity[var] = newAct;\n\n    const double LIMIT = 1e100;\n    if (newAct > LIMIT || var_inc > LIMIT) {\n        const double SCALE = 1e-100;\n        for (int i = 1; i <= vars; ++i) activity[i] *= SCALE;\n        var_inc *= SCALE;\n    }\n\n    if (vsids.inHeap(var)) vsids.update(var);\n}"
+    },
+    "PAR-2": {
+      "0": 1858,
+      "1": 2256,
+      "2": 2247,
+      "3": 1797,
+      "4": 2228,
+      "5": 2379
+    },
+    "satisfiable": {
+      "0": 19
+    },
+    "unsatisfiable": {
+      "0": 0
+    },
+    "timeout": {
+      "0": 0
+    }
+  },
+  "answers": {
+    "1": "void Solver::bump_var(int var, double coeff) {\n    // Guard against invalid variable indices\n    if (var < 1 || var > vars) return;\n\n    // Increment activity with the given coefficient\n    double delta = var_inc * coeff;\n    activity[var] += delta;\n\n    // Rescale all activities if any exceeds a safe upper bound\n    const double ACTIVITY_LIMIT = 1e150;\n    if (activity[var] > ACTIVITY_LIMIT) {\n        const double RESCALE_FACTOR = 1e-150;\n        for (int i = 1; i <= vars; ++i) {\n            activity[i] *= RESCALE_FACTOR;\n        }\n        var_inc *= RESCALE_FACTOR;\n    }\n\n    // Keep the VSIDS heap up‑to‑date\n    if (vsids.inHeap(var)) {\n        vsids.update(var);\n    }\n}",
+    "2": "void Solver::bump_var(int var, double coeff) {\n    // Compute increment based on current var_inc and provided coefficient\n    double inc = var_inc * coeff;\n    activity[var] += inc;\n\n    // Rescale activities if any value exceeds a safe threshold to avoid overflow\n    const double ACTIVITY_LIMIT = 1e150;\n    if (activity[var] > ACTIVITY_LIMIT) {\n        double scale = 1e-150;\n        for (int i = 1; i <= vars; ++i) {\n            activity[i] *= scale;\n        }\n        var_inc *= scale;\n    }\n\n    // Ensure the variable is correctly positioned in the VSIDS heap\n    if (vsids.inHeap(var)) {\n        vsids.update(var);\n    } else {\n        vsids.insert(var);\n    }\n}",
+    "3": "void Solver::bump_var(int var, double coeff) {\n    double inc = var_inc * coeff;\n    activity[var] += inc;\n\n    const double ACTIVITY_LIMIT = 1e300;   // very high to avoid frequent rescales\n    if (activity[var] > ACTIVITY_LIMIT) {\n        const double SCALE = 1e-300;\n        for (int i = 1; i <= vars; ++i) activity[i] *= SCALE;\n        var_inc *= SCALE;\n    }\n\n    if (vsids.inHeap(var)) vsids.update(var);\n}",
+    "4": "void Solver::bump_var(int var, double coeff) {\n    // compute increment\n    double inc = var_inc * coeff;\n    activity[var] += inc;\n\n    // Rescale when a single activity becomes too large\n    const double ACT_LIMIT = 1e150;\n    const double SCALE = 1e-100;\n    if (activity[var] > ACT_LIMIT) {\n        for (int i = 1; i <= vars; ++i) activity[i] *= SCALE;\n        var_inc *= SCALE;\n    }\n\n    // Also keep var_inc itself bounded to avoid overflow in future increments\n    if (var_inc > ACT_LIMIT) {\n        for (int i = 1; i <= vars; ++i) activity[i] *= SCALE;\n        var_inc *= SCALE;\n    }\n\n    // update VSIDS heap if needed\n    if (vsids.inHeap(var)) vsids.update(var);\n}",
+    "5": "void Solver::bump_var(int var, double coeff) {\n    double inc = var_inc * coeff;\n    double newAct = activity[var] + inc;\n    activity[var] = newAct;\n\n    const double LIMIT = 1e100;\n    if (newAct > LIMIT || var_inc > LIMIT) {\n        const double SCALE = 1e-100;\n        for (int i = 1; i <= vars; ++i) activity[i] *= SCALE;\n        var_inc *= SCALE;\n    }\n\n    if (vsids.inHeap(var)) vsids.update(var);\n}"
+  },
+  "extra_params": {
+    "1": {
+      "lbd_queue_size": "50"
+    },
+    "2": {
+      "lbd_queue_size": "50"
+    },
+    "3": {
+      "lbd_queue_size": "50"
+    },
+    "4": {
+      "lbd_queue_size": "50"
+    },
+    "5": {
+      "lbd_queue_size": "50"
+    }
+  },
+  "best_result": {
+    "5": [
+      2379,
+      "void Solver::bump_var(int var, double coeff) {\n    double inc = var_inc * coeff;\n    double newAct = activity[var] + inc;\n    activity[var] = newAct;\n\n    const double LIMIT = 1e100;\n    if (newAct > LIMIT || var_inc > LIMIT) {\n        const double SCALE = 1e-100;\n        for (int i = 1; i <= vars; ++i) activity[i] *= SCALE;\n        var_inc *= SCALE;\n    }\n\n    if (vsids.inHeap(var)) vsids.update(var);\n}",
+      2379
+    ]
+  },
+  "saved_at": 1776048991.312689
+}

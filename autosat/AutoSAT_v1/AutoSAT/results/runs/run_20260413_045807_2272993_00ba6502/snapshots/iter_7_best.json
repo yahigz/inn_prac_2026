@@ -1,0 +1,7 @@
+{
+  "iter": 7,
+  "best_id": "8",
+  "time": 2114,
+  "code": "void Solver::bump_var(int var, double coeff) {\n    // Pre‑emptive overflow check: if the current activity is already close to the limit,\n    // rescale all activities and the increment factor before adding the new bump.\n    const double LIMIT = 1e100;\n    if (activity[var] > LIMIT / var_inc) {\n        const double SCALE = 1e-100;\n        for (int i = 1; i <= vars; ++i) {\n            activity[i] *= SCALE;\n        }\n        var_inc *= SCALE;\n    }\n\n    // Apply the bump.\n    activity[var] += var_inc * coeff;\n\n    // Update the VSIDS heap if the variable is present.\n    if (vsids.inHeap(var)) {\n        vsids.update(var);\n    }\n}",
+  "PAR-2": 2114
+}

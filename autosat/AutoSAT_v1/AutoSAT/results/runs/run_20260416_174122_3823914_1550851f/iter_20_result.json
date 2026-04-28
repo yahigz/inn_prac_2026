@@ -1,0 +1,20 @@
+{
+  "time": {
+    "21": 11352
+  },
+  "prompt": {
+    "21": "void Solver::bump_var(int var, double coeff) {\n    if (coeff == 0.0) return;\n    const double MAX_ACT = 1e100;\n    const double SCALE   = 1e-100;\n\n    // fast activity increment\n    activity[var] += var_inc * coeff;\n\n    // handle possible overflow with lazy scaling\n    if (activity[var] > MAX_ACT) {\n        for (int i = 1; i <= vars; ++i) activity[i] *= SCALE;\n        var_inc *= SCALE;\n    }\n\n    // keep VSIDS heap up‑to‑date\n    if (vsids.inHeap(var)) vsids.update(var);\n}"
+  },
+  "PAR-2": {
+    "21": 11352
+  },
+  "satisfiable": {
+    "21": 5
+  },
+  "unsatisfiable": {
+    "21": 7
+  },
+  "timeout": {
+    "21": 0
+  }
+}

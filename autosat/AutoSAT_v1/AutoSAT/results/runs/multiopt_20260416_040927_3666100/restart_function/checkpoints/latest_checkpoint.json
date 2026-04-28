@@ -1,0 +1,44 @@
+{
+  "version": 1,
+  "run_id": "multiopt_20260416_040927_3666100",
+  "next_iter": 3,
+  "results": {
+    "time": {
+      "0": 76,
+      "3": 76
+    },
+    "prompt": {
+      "0": "",
+      "3": "void Solver::restart() {\n    // Aggressively reset LBD statistics\n    fast_lbd_sum = 0;\n    lbd_queue_size = 0;\n    lbd_queue_pos = 0;\n    // Backtrack to root level\n    backtrack(0);\n    // Rephase variables with mixed strategy\n    int r = rand() % 100;\n    if (r < 50) {\n        // 50% keep the best phase seen so far\n        for (int i = 1; i <= vars; ++i) saved[i] = local_best[i];\n    } else if (r < 70) {\n        // 20% invert the best phase\n        for (int i = 1; i <= vars; ++i) saved[i] = -local_best[i];\n    } else if (r < 90) {\n        // 20% assign random phase\n        for (int i = 1; i <= vars; ++i) saved[i] = (rand() & 1) ? 1 : -1;\n    } else {\n        // 10% keep previous saved phase (no change)\n        // do nothing\n    }\n    // Decay activity scores to diversify future decisions\n    var_inc *= 0.5;\n    for (int i = 1; i <= vars; ++i) {\n        activity[i] *= 0.5;\n        if (!vsids.inHeap(i)) vsids.insert(i);\n    }\n}"
+    },
+    "PAR-2": {
+      "0": 76,
+      "3": 76
+    },
+    "satisfiable": {
+      "0": 12
+    },
+    "unsatisfiable": {
+      "0": 0
+    },
+    "timeout": {
+      "0": 0
+    }
+  },
+  "answers": {
+    "3": "void Solver::restart() {\n    // Aggressively reset LBD statistics\n    fast_lbd_sum = 0;\n    lbd_queue_size = 0;\n    lbd_queue_pos = 0;\n    // Backtrack to root level\n    backtrack(0);\n    // Rephase variables with mixed strategy\n    int r = rand() % 100;\n    if (r < 50) {\n        // 50% keep the best phase seen so far\n        for (int i = 1; i <= vars; ++i) saved[i] = local_best[i];\n    } else if (r < 70) {\n        // 20% invert the best phase\n        for (int i = 1; i <= vars; ++i) saved[i] = -local_best[i];\n    } else if (r < 90) {\n        // 20% assign random phase\n        for (int i = 1; i <= vars; ++i) saved[i] = (rand() & 1) ? 1 : -1;\n    } else {\n        // 10% keep previous saved phase (no change)\n        // do nothing\n    }\n    // Decay activity scores to diversify future decisions\n    var_inc *= 0.5;\n    for (int i = 1; i <= vars; ++i) {\n        activity[i] *= 0.5;\n        if (!vsids.inHeap(i)) vsids.insert(i);\n    }\n}"
+  },
+  "extra_params": {
+    "3": {
+      "lbd_queue_size": "50"
+    }
+  },
+  "best_result": {
+    "3": [
+      76,
+      "void Solver::restart() {\n    // Aggressively reset LBD statistics\n    fast_lbd_sum = 0;\n    lbd_queue_size = 0;\n    lbd_queue_pos = 0;\n    // Backtrack to root level\n    backtrack(0);\n    // Rephase variables with mixed strategy\n    int r = rand() % 100;\n    if (r < 50) {\n        // 50% keep the best phase seen so far\n        for (int i = 1; i <= vars; ++i) saved[i] = local_best[i];\n    } else if (r < 70) {\n        // 20% invert the best phase\n        for (int i = 1; i <= vars; ++i) saved[i] = -local_best[i];\n    } else if (r < 90) {\n        // 20% assign random phase\n        for (int i = 1; i <= vars; ++i) saved[i] = (rand() & 1) ? 1 : -1;\n    } else {\n        // 10% keep previous saved phase (no change)\n        // do nothing\n    }\n    // Decay activity scores to diversify future decisions\n    var_inc *= 0.5;\n    for (int i = 1; i <= vars; ++i) {\n        activity[i] *= 0.5;\n        if (!vsids.inHeap(i)) vsids.insert(i);\n    }\n}",
+      76
+    ]
+  },
+  "saved_at": 1776301971.7188742
+}

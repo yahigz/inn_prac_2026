@@ -1,0 +1,20 @@
+{
+  "time": {
+    "3": 26541
+  },
+  "prompt": {
+    "3": "void Solver::restart() {\n    // Aggressively reset LBD statistics\n    fast_lbd_sum = 0;\n    lbd_queue_size = 0;\n    lbd_queue_pos = 0;\n\n    // Return to root level\n    backtrack(0);\n\n    // Rephase variables with a mixed strategy\n    for (int i = 1; i <= vars; ++i) {\n        int r = rand() % 100;\n        if (r < 30) {\n            // Keep the best phase observed so far\n            saved[i] = local_best[i];\n        } else if (r < 55) {\n            // Flip the best phase\n            saved[i] = -local_best[i];\n        } else {\n            // Assign a completely random phase\n            saved[i] = (rand() & 1) ? 1 : -1;\n        }\n    }\n\n    // Slightly increase variable activity increment to diversify search after restart\n    var_inc *= 1.2;\n}"
+  },
+  "PAR-2": {
+    "3": 41541
+  },
+  "satisfiable": {
+    "3": 16
+  },
+  "unsatisfiable": {
+    "3": 0
+  },
+  "timeout": {
+    "3": 3
+  }
+}

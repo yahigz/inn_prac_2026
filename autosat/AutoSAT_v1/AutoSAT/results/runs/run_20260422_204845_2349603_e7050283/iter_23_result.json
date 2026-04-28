@@ -1,0 +1,20 @@
+{
+  "time": {
+    "24": 9805
+  },
+  "prompt": {
+    "24": "void Solver::rephase() {\n    rephases = 0;\n    threshold *= 0.85;\n    rephase_limit += 10240;\n    \n    // Update saved phases based on current trail and local best\n    int phase_rand = rand() % 100;\n    if (phase_rand < 60) {\n        // Use local best phase (most frequent recent assignments)\n        for (int i = 1; i <= vars; i++) saved[i] = local_best[i];\n    } else if (phase_rand < 70) {\n        // Invert local best phase\n        for (int i = 1; i <= vars; i++) saved[i] = -local_best[i];\n    } else if (phase_rand < 85) {\n        // Random phase\n        for (int i = 1; i <= vars; i++) saved[i] = rand() % 2 ? 1 : -1;\n    } else {\n        // Clear phase (use VSIDS default)\n        for (int i = 1; i <= vars; i++) saved[i] = 0;\n    }\n}"
+  },
+  "PAR-2": {
+    "24": 9805
+  },
+  "satisfiable": {
+    "24": 5
+  },
+  "unsatisfiable": {
+    "24": 7
+  },
+  "timeout": {
+    "24": 0
+  }
+}

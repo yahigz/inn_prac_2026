@@ -1,0 +1,17 @@
+cnf File 	 Duration 	 Situation 
+../../datasets/mini_v2/eval/Zamkeller_K7_N28.cnf	7	satisfiable
+../../datasets/mini_v2/eval/Zamkeller_K8_N30.cnf	19	satisfiable
+../../datasets/mini_v2/eval/Zamkeller_K5_N42.cnf	196	satisfiable
+../../datasets/mini_v2/eval/Zamkeller_K4_N46.cnf	165	satisfiable
+../../datasets/mini_v2/eval/Zamkeller_K7_N38.cnf	141	satisfiable
+../../datasets/mini_v2/eval/Zamkeller_K10_N25.cnf	4	satisfiable
+../../datasets/mini_v2/eval/Zamkeller_K3_N38.cnf	48	satisfiable
+../../datasets/mini_v2/eval/Zamkeller_K7_N25.cnf	3	satisfiable
+../../datasets/mini_v2/eval/Zamkeller_K4_N30.cnf	12	satisfiable
+../../datasets/mini_v2/eval/Zamkeller_K3_N28.cnf	8	satisfiable
+../../datasets/mini_v2/eval/Zamkeller_K3_N30.cnf	7	satisfiable
+../../datasets/mini_v2/eval/Zamkeller_K4_N42.cnf	194	satisfiable
+../../datasets/mini_v2/eval/Zamkeller_K9_N38.cnf	80	satisfiable
+../../datasets/mini_v2/eval/Zamkeller_K8_N38.cnf	148	satisfiable
+../../datasets/mini_v2/eval/Zamkeller_K6_N36.cnf	95	satisfiable
+{'PAR-2': 75.13, 'satisfiable': 15, 'unsatisfiable': 0, 'timeout': 0, 'total time': 1127, '#question': 15}

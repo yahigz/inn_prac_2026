@@ -1,0 +1,20 @@
+{
+  "time": {
+    "14": 2402
+  },
+  "prompt": {
+    "14": "void Solver::bump_var(int var, double coeff) {\n    const double LIM = 1e200;          // raise limit to reduce scaling frequency\n    const double SC  = 1e-200;         // corresponding scaling factor\n    double delta = var_inc * coeff;\n    activity[var] += delta;\n    if (activity[var] > LIM) {\n        for (int i = 1; i <= vars; ++i) activity[i] *= SC;\n        var_inc *= SC;\n    }\n    if (vsids.inHeap(var)) vsids.update(var);\n}"
+  },
+  "PAR-2": {
+    "14": 2402
+  },
+  "satisfiable": {
+    "14": 19
+  },
+  "unsatisfiable": {
+    "14": 0
+  },
+  "timeout": {
+    "14": 0
+  }
+}

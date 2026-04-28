@@ -1,0 +1,17 @@
+{
+  "0": {
+    "time": 75,
+    "PAR-2": 75,
+    "prompt": ""
+  },
+  "1": {
+    "time": 87,
+    "PAR-2": 87,
+    "prompt": "void Solver::bump_var(int var, double coeff) {\n    // Increase activity of the variable by a scaled coefficient\n    activity[var] += var_inc * coeff;\n\n    // Prevent floating‑point overflow by rescaling all activities when a limit is exceeded\n    const double ACT_LIMIT = 1e100;\n    if (activity[var] > ACT_LIMIT) {\n        const double SCALE = 1e-100;\n        for (int i = 1; i <= vars; ++i) {\n            activity[i] *= SCALE;\n        }\n        var_inc *= SCALE;\n    }\n\n    // Keep the VSIDS heap consistent: update if already present, otherwise insert\n    if (vsids.inHeap(var)) {\n        vsids.update(var);\n    } else {\n        vsids.insert(var);\n    }\n}"
+  },
+  "2": {
+    "time": 95,
+    "PAR-2": 95,
+    "prompt": "void Solver::bump_var(int var, double coeff) {\n    double inc = var_inc * coeff;\n    double newAct = activity[var] + inc;\n    const double ACT_LIMIT = 1e120;\n    if (newAct > ACT_LIMIT) {\n        double scale = 1e-120;\n        for (int i = 1; i <= vars; ++i) {\n            activity[i] *= scale;\n        }\n        var_inc *= scale;\n        newAct = activity[var] + inc; // recompute after scaling\n    }\n    activity[var] = newAct;\n    if (vsids.inHeap(var)) {\n        vsids.update(var);\n    }\n}"
+  }
+}

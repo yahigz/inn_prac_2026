@@ -1,0 +1,20 @@
+{
+  "time": {
+    "1": 125550
+  },
+  "prompt": {
+    "1": "void Solver::bump_var(int var, double coeff) {\n    // Compute the increment based on the current decay factor and the provided coefficient\n    double inc = var_inc * coeff;\n    // Safely increase the activity, ensuring it stays non‑negative\n    activity[var] = std::max(0.0, activity[var] + inc);\n\n    // Rescale all activities if any entry grows beyond a safe threshold to avoid overflow\n    const double RESCALE_THRESHOLD = 1e150;\n    if (activity[var] > RESCALE_THRESHOLD) {\n        double scale = 1e-150;                     // Scale factor to bring values back into range\n        for (int i = 1; i <= vars; ++i) {\n            activity[i] *= scale;\n        }\n        var_inc *= scale;                          // Keep the decay factor consistent with the rescaling\n    }\n\n    // If the variable is present in the VSIDS heap, update its position according to the new activity\n    if (vsids.inHeap(var)) {\n        vsids.update(var);\n    }\n}"
+  },
+  "PAR-2": {
+    "1": 230550
+  },
+  "satisfiable": {
+    "1": 27
+  },
+  "unsatisfiable": {
+    "1": 0
+  },
+  "timeout": {
+    "1": 21
+  }
+}

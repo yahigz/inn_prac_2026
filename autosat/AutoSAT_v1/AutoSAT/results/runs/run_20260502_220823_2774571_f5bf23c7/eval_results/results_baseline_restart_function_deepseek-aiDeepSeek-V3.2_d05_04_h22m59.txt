@@ -1,0 +1,10 @@
+cnf File 	 Duration 	 Situation 
+../../datasets/cryptography-ascon/eval/asconhashv12_opt64_H7_M2-OrF8zEw_m2_4.c.cnf	231	satisfiable
+../../datasets/cryptography-ascon/eval/asconhashv12_opt64_H7_M2-gHvzZOd_m3_4_U11.c.cnf	558	unsatisfiable
+../../datasets/cryptography-ascon/eval/asconhashv12_opt64_H10_M2-pH7B6T6Vub_m6_7.c.cnf	850	satisfiable
+../../datasets/cryptography-ascon/eval/asconhashv12_opt64_H12_M2-CxLJidFX21oI_m3_6_U2.c.cnf	1079	unsatisfiable
+../../datasets/cryptography-ascon/eval/asconhashv12_opt64_H6_M2-4XKSMr_m1_3_U25.c.cnf	552	unsatisfiable
+../../datasets/cryptography-ascon/eval/asconhashv12_opt64_H4_M2-ldRf_m1_2_U21.c.cnf	580	unsatisfiable
+../../datasets/cryptography-ascon/eval/asconhashv12_opt64_H13_M2-axxJh7DAq767y_m4_5.c.cnf	361	satisfiable
+../../datasets/cryptography-ascon/eval/asconhashv12_opt64_H8_M2-bL4cM6NJ_m4_5_U14.c.cnf	919	unsatisfiable
+{'PAR-2': 641.25, 'satisfiable': 3, 'unsatisfiable': 5, 'timeout': 0, 'total time': 5130, '#question': 8}

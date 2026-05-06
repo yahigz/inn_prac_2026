@@ -1,0 +1,7 @@
+{
+  "iter": 7,
+  "best_id": "8",
+  "time": 9054,
+  "code": "void Solver::rephase() {\n    rephases = 0;\n    threshold *= 0.85;\n    rephase_limit += 1024;\n    \n    // Adjust phases based on recent activity\n    for (int i = 1; i <= vars; i++) {\n        if (activity[i] > 1e-10) {\n            // Favor phases that have been successful recently\n            if (rand() % 100 < 70) {\n                saved[i] = local_best[i];\n            } else if (rand() % 100 < 15) {\n                saved[i] = -local_best[i];\n            } else if (rand() % 100 < 10) {\n                saved[i] = rand() % 2 ? 1 : -1;\n            } else {\n                saved[i] = 0;\n            }\n        }\n    }\n}",
+  "PAR-2": 9054
+}

@@ -1,0 +1,7 @@
+{
+  "iter": 19,
+  "best_id": "20",
+  "time": 9441,
+  "code": "void Solver::rephase() {\n    rephases = 0;\n    threshold *= 0.85;  // Reduce threshold more aggressively to trigger rephase more often\n    rephase_limit += 4096;  // Increase limit moderately to allow more rephases but not too many\n    // During rephase, update saved phases based on current trail values and local best\n    for (int i = 1; i <= vars; i++) {\n        if (value[i] != 0) {\n            saved[i] = value[i];  // Prefer current assignment\n        } else if (rand() % 100 < 30) {\n            saved[i] = local_best[i];  // Sometimes use local best\n        } else {\n            saved[i] = rand() % 2 ? 1 : -1;  // Otherwise randomize\n        }\n    }\n}",
+  "PAR-2": 9441
+}

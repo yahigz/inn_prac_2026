@@ -1,0 +1,20 @@
+{
+  "time": {
+    "37": 11215
+  },
+  "prompt": {
+    "37": "void Solver::bump_var(int var, double coeff) {\n    // Scale coefficient by base factor\n    double scaled_coeff = coeff * var_inc;\n    // Add scaled activity\n    activity[var] += scaled_coeff;\n\n    // Periodically decay all activities to maintain numerical stability\n    if (activity[var] > 1e100) {\n        for (int i = 1; i <= vars; i++) {\n            activity[i] *= 1e-100;\n        }\n        var_inc *= 1e-100;\n    }\n\n    // Update heap position if variable is in heap\n    if (vsids.inHeap(var)) {\n        vsids.update(var);\n    }\n}"
+  },
+  "PAR-2": {
+    "37": 11215
+  },
+  "satisfiable": {
+    "37": 5
+  },
+  "unsatisfiable": {
+    "37": 7
+  },
+  "timeout": {
+    "37": 0
+  }
+}

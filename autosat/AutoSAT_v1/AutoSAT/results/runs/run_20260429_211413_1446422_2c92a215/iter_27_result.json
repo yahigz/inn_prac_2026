@@ -1,0 +1,20 @@
+{
+  "time": {
+    "28": 10773
+  },
+  "prompt": {
+    "28": "void Solver::rephase() {\n    rephases = 0;\n    \n    // Dynamically adjust threshold based on recent search progress\n    if (conflicts > 0) {\n        double recent_activity = (double)trail.size() / (double)conflicts;\n        threshold = (int)(threshold * (0.85 + 0.05 * recent_activity));\n    } else {\n        threshold = (int)(threshold * 0.9);\n    }\n    \n    // Increase rephase_limit more aggressively early, then stabilize\n    if (rephase_limit < 32768) {\n        rephase_limit += 8192;\n    } else {\n        rephase_limit += 4096;\n    }\n    \n    // Update local_best based on current trail assignments\n    for (int i = 1; i <= vars; i++) {\n        if (value[i] != 0) {\n            local_best[i] = value[i];\n        }\n    }\n}"
+  },
+  "PAR-2": {
+    "28": 10773
+  },
+  "satisfiable": {
+    "28": 5
+  },
+  "unsatisfiable": {
+    "28": 7
+  },
+  "timeout": {
+    "28": 0
+  }
+}

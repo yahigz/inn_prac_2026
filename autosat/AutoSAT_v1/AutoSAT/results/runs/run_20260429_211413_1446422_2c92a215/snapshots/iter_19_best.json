@@ -1,0 +1,7 @@
+{
+  "iter": 19,
+  "best_id": "20",
+  "time": 8955,
+  "code": "void Solver::rephase() {\n    rephases = 0;\n    threshold = std::max(threshold * 0.95, 100.0);\n    rephase_limit += 4096;\n}",
+  "PAR-2": 8955
+}

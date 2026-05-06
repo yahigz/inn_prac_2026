@@ -1,0 +1,44 @@
+{
+  "version": 1,
+  "run_id": "run_20260429_211413_1446422_2c92a215",
+  "next_iter": 1,
+  "results": {
+    "time": {
+      "0": 9088,
+      "1": 11267
+    },
+    "prompt": {
+      "0": "",
+      "1": "void Solver::bump_var(int var, double coeff) {\n    activity[var] += var_inc * coeff;\n    if (activity[var] > 1e100) {\n        for (int v = 1; v <= vars; v++) {\n            activity[v] *= 1e-100;\n        }\n        var_inc *= 1e-100;\n    }\n    if (vsids.inHeap(var)) {\n        vsids.update(var);\n    }\n}"
+    },
+    "PAR-2": {
+      "0": 9088,
+      "1": 11267
+    },
+    "satisfiable": {
+      "0": 5
+    },
+    "unsatisfiable": {
+      "0": 7
+    },
+    "timeout": {
+      "0": 0
+    }
+  },
+  "answers": {
+    "1": "void Solver::bump_var(int var, double coeff) {\n    activity[var] += var_inc * coeff;\n    if (activity[var] > 1e100) {\n        for (int v = 1; v <= vars; v++) {\n            activity[v] *= 1e-100;\n        }\n        var_inc *= 1e-100;\n    }\n    if (vsids.inHeap(var)) {\n        vsids.update(var);\n    }\n}"
+  },
+  "extra_params": {
+    "1": {
+      "lbd_queue_size": "50"
+    }
+  },
+  "best_result": {
+    "1": [
+      11267,
+      "void Solver::bump_var(int var, double coeff) {\n    activity[var] += var_inc * coeff;\n    if (activity[var] > 1e100) {\n        for (int v = 1; v <= vars; v++) {\n            activity[v] *= 1e-100;\n        }\n        var_inc *= 1e-100;\n    }\n    if (vsids.inHeap(var)) {\n        vsids.update(var);\n    }\n}",
+      11267
+    ]
+  },
+  "saved_at": 1777490763.9787364
+}

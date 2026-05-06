@@ -1,0 +1,20 @@
+{
+  "time": {
+    "1": 8757
+  },
+  "prompt": {
+    "1": "void Solver::bump_var(int var, double coeff) {\n    // Update activity score\n    activity[var] += var_inc * coeff;\n    // Rescale activity scores and increment to prevent overflow\n    if (activity[var] > 1e100) {\n        for (int i = 1; i <= vars; i++) {\n            activity[i] *= 1e-100;\n        }\n        var_inc *= 1e-100;\n    }\n    // Trigger heap update if variable is present\n    if (vsids.inHeap(var)) {\n        vsids.update(var);\n    }\n}"
+  },
+  "PAR-2": {
+    "1": 8757
+  },
+  "satisfiable": {
+    "1": 5
+  },
+  "unsatisfiable": {
+    "1": 7
+  },
+  "timeout": {
+    "1": 0
+  }
+}

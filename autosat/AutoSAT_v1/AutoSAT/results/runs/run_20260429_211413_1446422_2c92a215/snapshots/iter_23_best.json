@@ -1,0 +1,7 @@
+{
+  "iter": 23,
+  "best_id": "24",
+  "time": 8730,
+  "code": "void Solver::rephase() {\n    rephases = 0;\n    threshold *= 0.85;\n    rephase_limit += 4096;\n    \n    // Perform phase saving update with probability based on recent performance\n    if (fast_lbd_sum > 0 && lbd_queue_size > 0) {\n        double fast_avg = fast_lbd_sum / lbd_queue_size;\n        double slow_avg = slow_lbd_sum / conflicts;\n        \n        // If recent conflicts are significantly worse than historical average,\n        // more aggressively change phases to escape local minima\n        if (fast_avg > 1.5 * slow_avg) {\n            // Reset to random phases with higher probability\n            for (int i = 1; i <= vars; i++) {\n                saved[i] = (rand() % 2 ? 1 : -1);\n            }\n        } else if (fast_avg > slow_avg) {\n            // Mild degradation - use local best phases inverted\n            for (int i = 1; i <= vars; i++) {\n                saved[i] = -local_best[i];\n            }\n        } else {\n            // Good performance - stick with local best phases\n            for (int i = 1; i <= vars; i++) {\n                saved[i] = local_best[i];\n            }\n        }\n    } else {\n        // No LBD data yet - use default random phase assignment\n        for (int i = 1; i <= vars; i++) {\n            saved[i] = (rand() % 2 ? 1 : -1);\n        }\n    }\n}",
+  "PAR-2": 8730
+}

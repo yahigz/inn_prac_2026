@@ -1,0 +1,7 @@
+{
+  "iter": 29,
+  "best_id": "30",
+  "time": 42450,
+  "code": "else if (lbd_queue_size == 50 && conflicts > 100 && (fast_lbd_sum / lbd_queue_size) > 1.5 * (slow_lbd_sum / conflicts) && trail.size() > 0.9 * threshold) restart();",
+  "PAR-2": 82450
+}

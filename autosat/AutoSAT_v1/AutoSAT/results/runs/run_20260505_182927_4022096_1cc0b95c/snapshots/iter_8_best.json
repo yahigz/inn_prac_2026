@@ -1,0 +1,7 @@
+{
+  "iter": 8,
+  "best_id": "9",
+  "time": 11683,
+  "code": "void Solver::bump_var(int var, double coeff) {\n    // Exponential moving average with momentum\n    double delta = var_inc * coeff;\n    activity[var] += delta;\n    // Apply momentum to variable increment\n    var_inc *= 1.05;\n    \n    if (activity[var] > 1e100) {\n        // Rescale activities to prevent overflow\n        for (int i = 1; i <= vars; i++) activity[i] *= 1e-100;\n        var_inc *= 1e-100;\n    }\n    \n    // Update heap if variable is present\n    if (vsids.inHeap(var)) vsids.update(var);\n}",
+  "PAR-2": 11683
+}

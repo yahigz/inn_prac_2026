@@ -1,0 +1,7 @@
+{
+  "iter": 15,
+  "best_id": "16",
+  "time": 11065,
+  "code": "void Solver::rephase() {\n    rephases = 0;\n    threshold *= 0.85;  // slightly more aggressive reduction to trigger rephasing sooner\n    rephase_limit += 1024;  // smaller increment to rephase more frequently\n    \n    // Use a combination of local best and random flips based on activity\n    for (int i = 1; i <= vars; i++) {\n        if (activity[i] > 1e-50) {  // active variables\n            // 80% chance to use local best, 20% chance to flip\n            if (rand() % 100 < 80) {\n                saved[i] = local_best[i];\n            } else {\n                saved[i] = -local_best[i];\n            }\n        } else {  // inactive variables get random phase\n            saved[i] = (rand() % 2) ? 1 : -1;\n        }\n    }\n}",
+  "PAR-2": 11065
+}

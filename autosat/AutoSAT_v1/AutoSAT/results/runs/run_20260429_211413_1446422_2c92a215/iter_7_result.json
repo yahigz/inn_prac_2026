@@ -1,0 +1,20 @@
+{
+  "time": {
+    "8": 8539
+  },
+  "prompt": {
+    "8": "void Solver::rephase() {\n    rephases = 0;\n    threshold *= 0.85; // make rephase more frequent\n    rephase_limit += 4096; // smaller increment than original\n\n    int choice = rand() % 100;\n    if (choice < 40) {\n        // use current trail values as phase\n        for (int i = 1; i <= vars; i++) {\n            saved[i] = value[i];\n        }\n    } else if (choice < 70) {\n        // invert current trail values\n        for (int i = 1; i <= vars; i++) {\n            saved[i] = -value[i];\n        }\n    } else if (choice < 90) {\n        // use local best phase\n        for (int i = 1; i <= vars; i++) {\n            saved[i] = local_best[i];\n        }\n    } else {\n        // random phase\n        for (int i = 1; i <= vars; i++) {\n            saved[i] = rand() % 2 ? 1 : -1;\n        }\n    }\n}"
+  },
+  "PAR-2": {
+    "8": 8539
+  },
+  "satisfiable": {
+    "8": 5
+  },
+  "unsatisfiable": {
+    "8": 7
+  },
+  "timeout": {
+    "8": 0
+  }
+}

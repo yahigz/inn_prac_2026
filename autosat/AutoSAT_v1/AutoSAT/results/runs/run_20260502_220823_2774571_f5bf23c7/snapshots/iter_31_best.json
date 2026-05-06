@@ -1,0 +1,7 @@
+{
+  "iter": 31,
+  "best_id": "32",
+  "time": 9281,
+  "code": "void Solver::rephase() {\n    rephases = 0;\n    threshold *= 0.95;\n    rephase_limit += 4096;\n    \n    // Update saved phases based on current trail assignments\n    for (int i = 1; i <= vars; i++) {\n        if (value[i] != 0) {\n            // Prefer the current assignment if variable is assigned\n            saved[i] = value[i];\n        } else if (rand() % 100 < 30) {\n            // Occasionally randomize unassigned variables\n            saved[i] = rand() % 2 ? 1 : -1;\n        }\n        // Otherwise keep existing saved value\n    }\n}",
+  "PAR-2": 9281
+}

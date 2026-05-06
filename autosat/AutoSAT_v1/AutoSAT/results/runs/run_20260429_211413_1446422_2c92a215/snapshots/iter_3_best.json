@@ -1,0 +1,7 @@
+{
+  "iter": 3,
+  "best_id": "4",
+  "time": 8607,
+  "code": "void Solver::rephase() {\n    rephases = 0;\n    threshold *= 0.95;\n    rephase_limit += 4096;\n    // Update saved phases based on local_best or random with different probabilities\n    int phase_rand = rand() % 100;\n    if (phase_rand < 70) {\n        // 70% chance: set saved to local_best (exploitation)\n        for (int i = 1; i <= vars; i++) saved[i] = local_best[i];\n    } else if (phase_rand < 80) {\n        // 10% chance: set saved to opposite of local_best (diversification)\n        for (int i = 1; i <= vars; i++) saved[i] = -local_best[i];\n    } else if (phase_rand < 95) {\n        // 15% chance: random phase\n        for (int i = 1; i <= vars; i++) saved[i] = rand() % 2 ? 1 : -1;\n    } else {\n        // 5% chance: clear saved (let VSIDS decide polarity)\n        for (int i = 1; i <= vars; i++) saved[i] = 0;\n    }\n}",
+  "PAR-2": 8607
+}

@@ -1,0 +1,7 @@
+{
+  "iter": 14,
+  "best_id": "15",
+  "time": 9285,
+  "code": "void Solver::restart() {\n    fast_lbd_sum = lbd_queue_size = lbd_queue_pos = 0;\n    backtrack(0);\n    // More aggressive rephasing strategy\n    int phase_rand = rand() % 100;\n    if (phase_rand < 70) {\n        // 70% chance: use local best assignment\n        for (int i = 1; i <= vars; i++) saved[i] = local_best[i];\n    } else if (phase_rand < 80) {\n        // 10% chance: invert local best assignment\n        for (int i = 1; i <= vars; i++) saved[i] = -local_best[i];\n    } else if (phase_rand < 90) {\n        // 10% chance: random assignment\n        for (int i = 1; i <= vars; i++) saved[i] = (rand() % 2) ? 1 : -1;\n    } else {\n        // 10% chance: reset to saved phases\n        // (saved already contains previous phases from backtrack)\n    }\n}",
+  "PAR-2": 9285
+}

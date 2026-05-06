@@ -1,0 +1,58 @@
+{
+  "version": 1,
+  "run_id": "run_20260505_182927_4022096_1cc0b95c",
+  "next_iter": 3,
+  "results": {
+    "time": {
+      "0": 8408,
+      "1": 8757,
+      "2": 8495,
+      "3": 7191
+    },
+    "prompt": {
+      "0": "",
+      "1": "void Solver::bump_var(int var, double coeff) {\n    // Update activity score\n    activity[var] += var_inc * coeff;\n    // Rescale activity scores and increment to prevent overflow\n    if (activity[var] > 1e100) {\n        for (int i = 1; i <= vars; i++) {\n            activity[i] *= 1e-100;\n        }\n        var_inc *= 1e-100;\n    }\n    // Trigger heap update if variable is present\n    if (vsids.inHeap(var)) {\n        vsids.update(var);\n    }\n}",
+      "2": "else if (lbd_queue_size == 30 && conflicts > 100 && fast_lbd_sum / lbd_queue_size > 1.2 * slow_lbd_sum / conflicts) restart();",
+      "3": "void Solver::restart() {\n    fast_lbd_sum = lbd_queue_size = lbd_queue_pos = 0;\n    backtrack(0);\n    int phase_rand = rand() % 100;\n    if ((phase_rand -= 30) < 0)     for (int i = 1; i <= vars; i++) saved[i] = local_best[i];\n    else if ((phase_rand -= 5) < 0) for (int i = 1; i <= vars; i++) saved[i] = -local_best[i];\n    else if ((phase_rand -= 40) < 0)for (int i = 1; i <= vars; i++) saved[i] = rand() % 2 ? 1 : -1;\n    else for (int i = 1; i <= vars; i++) saved[i] = value[i];\n}"
+    },
+    "PAR-2": {
+      "0": 8408,
+      "1": 8757,
+      "2": 8495,
+      "3": 7191
+    },
+    "satisfiable": {
+      "0": 5
+    },
+    "unsatisfiable": {
+      "0": 7
+    },
+    "timeout": {
+      "0": 0
+    }
+  },
+  "answers": {
+    "1": "void Solver::bump_var(int var, double coeff) {\n    // Update activity score\n    activity[var] += var_inc * coeff;\n    // Rescale activity scores and increment to prevent overflow\n    if (activity[var] > 1e100) {\n        for (int i = 1; i <= vars; i++) {\n            activity[i] *= 1e-100;\n        }\n        var_inc *= 1e-100;\n    }\n    // Trigger heap update if variable is present\n    if (vsids.inHeap(var)) {\n        vsids.update(var);\n    }\n}",
+    "2": "else if (lbd_queue_size == 30 && conflicts > 100 && fast_lbd_sum / lbd_queue_size > 1.2 * slow_lbd_sum / conflicts) restart();",
+    "3": "void Solver::restart() {\n    fast_lbd_sum = lbd_queue_size = lbd_queue_pos = 0;\n    backtrack(0);\n    int phase_rand = rand() % 100;\n    if ((phase_rand -= 30) < 0)     for (int i = 1; i <= vars; i++) saved[i] = local_best[i];\n    else if ((phase_rand -= 5) < 0) for (int i = 1; i <= vars; i++) saved[i] = -local_best[i];\n    else if ((phase_rand -= 40) < 0)for (int i = 1; i <= vars; i++) saved[i] = rand() % 2 ? 1 : -1;\n    else for (int i = 1; i <= vars; i++) saved[i] = value[i];\n}"
+  },
+  "extra_params": {
+    "1": {
+      "lbd_queue_size": "50"
+    },
+    "2": {
+      "lbd_queue_size": "30"
+    },
+    "3": {
+      "lbd_queue_size": "50"
+    }
+  },
+  "best_result": {
+    "3": [
+      7191,
+      "void Solver::restart() {\n    fast_lbd_sum = lbd_queue_size = lbd_queue_pos = 0;\n    backtrack(0);\n    int phase_rand = rand() % 100;\n    if ((phase_rand -= 30) < 0)     for (int i = 1; i <= vars; i++) saved[i] = local_best[i];\n    else if ((phase_rand -= 5) < 0) for (int i = 1; i <= vars; i++) saved[i] = -local_best[i];\n    else if ((phase_rand -= 40) < 0)for (int i = 1; i <= vars; i++) saved[i] = rand() % 2 ? 1 : -1;\n    else for (int i = 1; i <= vars; i++) saved[i] = value[i];\n}",
+      7191
+    ]
+  },
+  "saved_at": 1778005276.7696683
+}

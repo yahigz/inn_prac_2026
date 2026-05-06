@@ -1,0 +1,20 @@
+{
+  "time": {
+    "2": 42432
+  },
+  "prompt": {
+    "2": "else if (lbd_queue_size >= 30 && conflicts > 500 && fast_lbd_sum > 2.5 * slow_lbd_sum && trail.size() > threshold * 0.7) restart();"
+  },
+  "PAR-2": {
+    "2": 82432
+  },
+  "satisfiable": {
+    "2": 0
+  },
+  "unsatisfiable": {
+    "2": 4
+  },
+  "timeout": {
+    "2": 8
+  }
+}

@@ -1,0 +1,20 @@
+{
+  "time": {
+    "20": 9469
+  },
+  "prompt": {
+    "20": "void Solver::rephase() {\n    rephases = 0;\n    threshold *= 0.9;\n    rephase_limit += 8192;\n    \n    // Adjust phases based on conflict analysis and local best\n    int phase_choice = rand() % 100;\n    \n    if (phase_choice < 60) {\n        // 60%: Use local best phase (most successful assignment)\n        for (int i = 1; i <= vars; i++) {\n            saved[i] = local_best[i];\n        }\n    } else if (phase_choice < 80) {\n        // 20%: Invert local best phase (explore opposite assignments)\n        for (int i = 1; i <= vars; i++) {\n            saved[i] = -local_best[i];\n        }\n    } else if (phase_choice < 90) {\n        // 10%: Use current trail phase (continue current direction)\n        for (int i = 1; i <= vars; i++) {\n            saved[i] = value[i];\n            if (saved[i] == 0) {\n                // For unassigned variables, keep original saved value\n                saved[i] = saved[i] > 0 ? 1 : -1;\n            }\n        }\n    } else {\n        // 10%: Random phase (diversification)\n        for (int i = 1; i <= vars; i++) {\n            saved[i] = rand() % 2 ? 1 : -1;\n        }\n    }\n}"
+  },
+  "PAR-2": {
+    "20": 9469
+  },
+  "satisfiable": {
+    "20": 5
+  },
+  "unsatisfiable": {
+    "20": 7
+  },
+  "timeout": {
+    "20": 0
+  }
+}

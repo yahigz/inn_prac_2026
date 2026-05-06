@@ -1,0 +1,7 @@
+{
+  "iter": 28,
+  "best_id": "29",
+  "time": 52933,
+  "code": "void Solver::bump_var(int var, double coeff) {\n    double inc = var_inc * coeff;\n    activity[var] += inc;\n    \n    // Adaptive decay based on recent conflict rate\n    if (conflicts > 0) {\n        double conflict_rate = (double)conflicts / (trail.size() + 1);\n        if (conflict_rate > 0.05) {\n            inc *= 1.2;\n        }\n    }\n    \n    // Variable aging: reduce activity of older variables\n    if (level[var] > 0) {\n        double age_factor = 1.0 / (1.0 + 0.01 * conflicts);\n        activity[var] *= age_factor;\n    }\n    \n    // Prevent overflow with smarter scaling\n    if (activity[var] > 1e100) {\n        double scale = 1e-100;\n        for (int i = 1; i <= vars; i++) activity[i] *= scale;\n        var_inc *= scale;\n    }\n    \n    // Update heap if variable is present\n    if (vsids.inHeap(var)) vsids.update(var);\n}",
+  "PAR-2": 97933
+}

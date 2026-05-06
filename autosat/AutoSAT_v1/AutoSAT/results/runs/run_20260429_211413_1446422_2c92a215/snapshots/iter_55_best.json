@@ -1,0 +1,7 @@
+{
+  "iter": 55,
+  "best_id": "56",
+  "time": 8743,
+  "code": "void Solver::rephase() {\n    // Reset rephase counter\n    rephases = 0;\n    \n    // Adjust threshold based on current performance\n    if (conflicts > 0) {\n        // Make threshold adaptive based on average trail length\n        double avg_trail_length = (double)trail.size() / conflicts;\n        threshold = std::max(100, (int)(avg_trail_length * 0.8));\n    }\n    \n    // Increase rephase limit more aggressively for better exploration\n    rephase_limit += 16384;\n    \n    // Update saved phases based on current assignment trends\n    // This helps preserve good assignments while still allowing exploration\n    for (int i = 1; i <= vars; i++) {\n        if (value[i] != 0) {\n            // Current assignment has been working (variable is assigned)\n            saved[i] = value[i];\n        } else if (local_best[i] != 0) {\n            // Use local best if variable is unassigned\n            saved[i] = local_best[i];\n        }\n        // Add some randomness (10%) to avoid getting stuck\n        if (rand() % 10 == 0) {\n            saved[i] = (rand() % 2 == 0) ? 1 : -1;\n        }\n    }\n}",
+  "PAR-2": 8743
+}

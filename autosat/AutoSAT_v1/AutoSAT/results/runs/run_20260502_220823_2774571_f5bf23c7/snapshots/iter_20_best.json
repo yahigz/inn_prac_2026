@@ -1,0 +1,7 @@
+{
+  "iter": 20,
+  "best_id": "21",
+  "time": 55657,
+  "code": "void Solver::bump_var(int var, double coeff) {\n    double increment = var_inc * coeff;\n    activity[var] += increment;\n    \n    // Dynamic decay: increase decay factor for high-activity vars\n    double decay_factor = 1.0;\n    if (activity[var] > 1e50) {\n        decay_factor = 0.95;\n    }\n    var_inc *= decay_factor;\n    \n    // Prevent overflow with more gradual scaling\n    if (activity[var] > 1e100) {\n        double scale = 1e-50;\n        for (int i = 1; i <= vars; i++) {\n            activity[i] *= scale;\n        }\n        var_inc *= scale;\n    }\n    \n    // Update heap if present\n    if (vsids.inHeap(var)) {\n        vsids.update(var);\n    }\n}",
+  "PAR-2": 110657
+}

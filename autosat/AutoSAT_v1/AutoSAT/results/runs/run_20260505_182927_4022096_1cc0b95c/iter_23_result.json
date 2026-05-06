@@ -1,0 +1,20 @@
+{
+  "time": {
+    "24": 9765
+  },
+  "prompt": {
+    "24": "void Solver::rephase() {\n    rephases = 0;\n    threshold *= 0.85;  // More aggressive threshold reduction\n    rephase_limit += 4096;  // Smaller increment to trigger rephase more frequently\n    \n    // Implement a phased rephasing strategy similar to restart's phase saving\n    int phase_rand = rand() % 100;\n    if ((phase_rand -= 50) < 0) {\n        // 50%: Save current trail state as phases\n        for (int i = 1; i <= vars; i++) \n            saved[i] = (value[i] != 0) ? value[i] : saved[i];\n    } else if ((phase_rand -= 30) < 0) {\n        // 30%: Invert current trail state\n        for (int i = 1; i <= vars; i++) \n            saved[i] = (value[i] != 0) ? -value[i] : -saved[i];\n    } else if ((phase_rand -= 15) < 0) {\n        // 15%: Use local best phases\n        for (int i = 1; i <= vars; i++) saved[i] = local_best[i];\n    } else {\n        // 5%: Random phases\n        for (int i = 1; i <= vars; i++) \n            saved[i] = (rand() % 2) ? 1 : -1;\n    }\n}"
+  },
+  "PAR-2": {
+    "24": 9765
+  },
+  "satisfiable": {
+    "24": 5
+  },
+  "unsatisfiable": {
+    "24": 7
+  },
+  "timeout": {
+    "24": 0
+  }
+}

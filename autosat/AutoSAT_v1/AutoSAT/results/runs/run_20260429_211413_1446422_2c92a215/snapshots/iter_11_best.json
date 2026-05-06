@@ -1,0 +1,7 @@
+{
+  "iter": 11,
+  "best_id": "12",
+  "time": 10216,
+  "code": "void Solver::rephase() {\n    rephases = 0;\n    threshold = trail.size() * 0.9;\n    rephase_limit += 8192;\n    for (int i = 1; i <= vars; i++) {\n        if (rand() % 100 < 20) {\n            saved[i] = -saved[i];\n        }\n    }\n}",
+  "PAR-2": 10216
+}

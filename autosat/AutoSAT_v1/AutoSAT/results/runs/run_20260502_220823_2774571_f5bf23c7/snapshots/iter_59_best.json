@@ -1,0 +1,7 @@
+{
+  "iter": 59,
+  "best_id": "60",
+  "time": 9233,
+  "code": "void Solver::rephase() {\n    // Reset rephase counter for new cycle\n    rephases = 0;\n    \n    // Decrease threshold more aggressively to trigger rephasing sooner\n    // This helps adapt to changes in search behavior faster\n    threshold *= 0.85;\n    \n    // Increase rephase limit moderately to allow more exploration\n    // between rephasing events\n    rephase_limit += 4096;\n    \n    // Update local_best phases based on current trail values\n    // This helps maintain good decision heuristics\n    for (int i = 1; i <= vars; i++) {\n        if (value[i] != 0) {\n            local_best[i] = value[i];\n        }\n    }\n}",
+  "PAR-2": 9233
+}

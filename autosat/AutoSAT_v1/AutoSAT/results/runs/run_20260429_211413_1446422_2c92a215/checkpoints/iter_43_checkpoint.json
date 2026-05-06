@@ -1,0 +1,333 @@
+{
+  "version": 1,
+  "run_id": "run_20260429_211413_1446422_2c92a215",
+  "next_iter": 44,
+  "results": {
+    "time": {
+      "0": 9088,
+      "1": 11267,
+      "2": 42432,
+      "3": 10020,
+      "4": 8607,
+      "5": 11399,
+      "6": 18253,
+      "7": 8938,
+      "8": 8539,
+      "9": 11321,
+      "10": 11086,
+      "11": 10477,
+      "12": 10216,
+      "13": 11330,
+      "14": 11031,
+      "15": 14612,
+      "16": 10607,
+      "17": 11369,
+      "18": 14035,
+      "19": 10479,
+      "20": 8955,
+      "21": 11338,
+      "22": 13696,
+      "23": 9000,
+      "24": 8730,
+      "25": 11400,
+      "26": 12161,
+      "28": 10773,
+      "29": 52933,
+      "30": 42450,
+      "32": 10975,
+      "33": 11326,
+      "34": 20043,
+      "36": 11455,
+      "37": 11215,
+      "38": 8622,
+      "39": 8141,
+      "40": 9316,
+      "41": 7341,
+      "42": 10651,
+      "44": 9401
+    },
+    "prompt": {
+      "0": "",
+      "1": "void Solver::bump_var(int var, double coeff) {\n    activity[var] += var_inc * coeff;\n    if (activity[var] > 1e100) {\n        for (int v = 1; v <= vars; v++) {\n            activity[v] *= 1e-100;\n        }\n        var_inc *= 1e-100;\n    }\n    if (vsids.inHeap(var)) {\n        vsids.update(var);\n    }\n}",
+      "2": "else if (lbd_queue_size >= 30 && conflicts > 500 && fast_lbd_sum > 2.5 * slow_lbd_sum && trail.size() > threshold * 0.7) restart();",
+      "3": "void Solver::restart() {\n    fast_lbd_sum = lbd_queue_size = lbd_queue_pos = 0;\n    backtrack(0);\n    int phase_rand = rand() % 100;\n    if ((phase_rand -= 70) < 0)     for (int i = 1; i <= vars; i++) saved[i] = local_best[i];\n    else if ((phase_rand -= 5) < 0) for (int i = 1; i <= vars; i++) saved[i] = -local_best[i];\n    else if ((phase_rand -= 10) < 0)for (int i = 1; i <= vars; i++) saved[i] = rand() % 2 ? 1 : -1;\n    else ;\n}",
+      "4": "void Solver::rephase() {\n    rephases = 0;\n    threshold *= 0.95;\n    rephase_limit += 4096;\n    // Update saved phases based on local_best or random with different probabilities\n    int phase_rand = rand() % 100;\n    if (phase_rand < 70) {\n        // 70% chance: set saved to local_best (exploitation)\n        for (int i = 1; i <= vars; i++) saved[i] = local_best[i];\n    } else if (phase_rand < 80) {\n        // 10% chance: set saved to opposite of local_best (diversification)\n        for (int i = 1; i <= vars; i++) saved[i] = -local_best[i];\n    } else if (phase_rand < 95) {\n        // 15% chance: random phase\n        for (int i = 1; i <= vars; i++) saved[i] = rand() % 2 ? 1 : -1;\n    } else {\n        // 5% chance: clear saved (let VSIDS decide polarity)\n        for (int i = 1; i <= vars; i++) saved[i] = 0;\n    }\n}",
+      "5": "void Solver::bump_var(int var, double coeff) {\n    double bump = var_inc * coeff;\n    activity[var] += bump;\n    if (activity[var] > 1e100) {\n        for (int i = 1; i <= vars; i++) activity[i] *= 1e-100;\n        var_inc *= 1e-100;\n    }\n    if (vsids.inHeap(var)) vsids.update(var);\n}",
+      "6": "else if (lbd_queue_size >= 45 && 0.7 * fast_lbd_sum / lbd_queue_size > slow_lbd_sum / conflicts && conflicts > 1000) restart();",
+      "7": "void Solver::restart() {\n    fast_lbd_sum = lbd_queue_size = lbd_queue_pos = 0;\n    backtrack(0);\n    int phase_rand = rand() % 100;\n    if ((phase_rand -= 50) < 0)     for (int i = 1; i <= vars; i++) saved[i] = local_best[i];\n    else if ((phase_rand -= 10) < 0) for (int i = 1; i <= vars; i++) saved[i] = -local_best[i];\n    else if ((phase_rand -= 30) < 0) for (int i = 1; i <= vars; i++) saved[i] = rand() % 2 ? 1 : -1;\n    else ;\n}",
+      "8": "void Solver::rephase() {\n    rephases = 0;\n    threshold *= 0.85; // make rephase more frequent\n    rephase_limit += 4096; // smaller increment than original\n\n    int choice = rand() % 100;\n    if (choice < 40) {\n        // use current trail values as phase\n        for (int i = 1; i <= vars; i++) {\n            saved[i] = value[i];\n        }\n    } else if (choice < 70) {\n        // invert current trail values\n        for (int i = 1; i <= vars; i++) {\n            saved[i] = -value[i];\n        }\n    } else if (choice < 90) {\n        // use local best phase\n        for (int i = 1; i <= vars; i++) {\n            saved[i] = local_best[i];\n        }\n    } else {\n        // random phase\n        for (int i = 1; i <= vars; i++) {\n            saved[i] = rand() % 2 ? 1 : -1;\n        }\n    }\n}",
+      "9": "void Solver::bump_var(int var, double coeff) {\n    double bump = var_inc * coeff;\n    activity[var] += bump;\n    if (activity[var] > 1e100) {\n        double scale = 1e-100;\n        for (int i = 1; i <= vars; i++) activity[i] *= scale;\n        var_inc *= scale;\n    }\n    if (vsids.inHeap(var)) vsids.update(var);\n}",
+      "10": "else if (lbd_queue_size == 50 && 0.7 * fast_lbd_sum / lbd_queue_size > slow_lbd_sum / conflicts && conflicts > 1000) restart();",
+      "11": "void Solver::restart() {\n    fast_lbd_sum = lbd_queue_size = lbd_queue_pos = 0;\n    backtrack(0);\n    int phase_rand = rand() % 100;\n    if ((phase_rand -= 70) < 0) {\n        for (int i = 1; i <= vars; i++) saved[i] = local_best[i];\n    } else if ((phase_rand -= 10) < 0) {\n        for (int i = 1; i <= vars; i++) saved[i] = -local_best[i];\n    } else if ((phase_rand -= 15) < 0) {\n        for (int i = 1; i <= vars; i++) saved[i] = rand() % 2 ? 1 : -1;\n    }\n}",
+      "12": "void Solver::rephase() {\n    rephases = 0;\n    threshold = trail.size() * 0.9;\n    rephase_limit += 8192;\n    for (int i = 1; i <= vars; i++) {\n        if (rand() % 100 < 20) {\n            saved[i] = -saved[i];\n        }\n    }\n}",
+      "13": "void Solver::bump_var(int var, double coeff) {\n    activity[var] += var_inc * coeff;\n    if (activity[var] > 1e100) {\n        double scale = 1e-100;\n        for (int i = 1; i <= vars; i++) activity[i] *= scale;\n        var_inc *= scale;\n    }\n    if (vsids.inHeap(var)) vsids.update(var);\n}",
+      "14": "else if (lbd_queue_size == 50 && 0.7 * fast_lbd_sum / lbd_queue_size > slow_lbd_sum / conflicts && conflicts > 1000) restart();",
+      "15": "void Solver::restart() {\n    fast_lbd_sum = lbd_queue_size = lbd_queue_pos = 0;\n    backtrack(0);\n    int phase_rand = rand() % 100;\n    if ((phase_rand -= 40) < 0)     for (int i = 1; i <= vars; i++) saved[i] = local_best[i];\n    else if ((phase_rand -= 30) < 0) for (int i = 1; i <= vars; i++) saved[i] = -local_best[i];\n    else if ((phase_rand -= 20) < 0) for (int i = 1; i <= vars; i++) saved[i] = rand() % 2 ? 1 : -1;\n    else ;\n}",
+      "16": "void Solver::rephase() {\n    rephases = 0;\n    threshold *= 0.85;  // Slightly more aggressive reduction than original 0.9\n    rephase_limit += 16384;  // Double the original increment\n    \n    // Update saved phases based on recent assignments during this phase\n    for (int i = 1; i <= vars; i++) {\n        if (value[i] != 0) {  // Variable has been assigned in current search\n            saved[i] = value[i];  // Save current assignment as preferred phase\n        } else if (rand() % 100 < 30) {  // 30% chance to randomize unassigned vars\n            saved[i] = rand() % 2 ? 1 : -1;\n        }\n        // Otherwise keep existing saved phase\n    }\n}",
+      "17": "void Solver::bump_var(int var, double coeff) {\n    if (level[var] <= 0) return;\n    activity[var] += var_inc * coeff;\n    if (activity[var] > 1e100) {\n        for (int i = 1; i <= vars; i++) activity[i] *= 1e-100;\n        var_inc *= 1e-100;\n    }\n    if (vsids.inHeap(var)) vsids.update(var);\n}",
+      "18": "else if (lbd_queue_size == 60 && 0.85 * fast_lbd_sum / lbd_queue_size > slow_lbd_sum / (conflicts + 1)) restart();",
+      "19": "void Solver::restart() {\n    fast_lbd_sum = lbd_queue_size = lbd_queue_pos = 0;\n    backtrack(0);\n    int phase_rand = rand() % 100;\n    if ((phase_rand -= 70) < 0) {\n        for (int i = 1; i <= vars; i++) saved[i] = local_best[i];\n    } else if ((phase_rand -= 10) < 0) {\n        for (int i = 1; i <= vars; i++) saved[i] = -local_best[i];\n    } else if ((phase_rand -= 10) < 0) {\n        for (int i = 1; i <= vars; i++) saved[i] = rand() % 2 ? 1 : -1;\n    } else {\n        for (int i = 1; i <= vars; i++) saved[i] = value[i] == 0 ? (rand() % 2 ? 1 : -1) : value[i];\n    }\n}",
+      "20": "void Solver::rephase() {\n    rephases = 0;\n    threshold = std::max(threshold * 0.95, 100.0);\n    rephase_limit += 4096;\n}",
+      "21": "void Solver::bump_var(int var, double coeff) {\n    activity[var] += var_inc * coeff;\n    if (activity[var] > 1e100) {\n        for (int i = 1; i <= vars; i++) activity[i] *= 1e-100;\n        var_inc *= 1e-100;\n    }\n    if (vsids.inHeap(var)) vsids.update(var);\n}",
+      "22": "else if (lbd_queue_size == 50 && fast_lbd_sum / lbd_queue_size > slow_lbd_sum / conflicts && conflicts > 10000) restart();",
+      "23": "void Solver::restart() {\n    fast_lbd_sum = lbd_queue_size = lbd_queue_pos = 0;\n    backtrack(0);\n    int phase_rand = rand() % 100;\n    if ((phase_rand -= 50) < 0) {\n        for (int i = 1; i <= vars; i++) saved[i] = (rand() % 2 ? 1 : -1);\n    } else if ((phase_rand -= 30) < 0) {\n        for (int i = 1; i <= vars; i++) saved[i] = local_best[i];\n    } else {\n        for (int i = 1; i <= vars; i++) saved[i] = -local_best[i];\n    }\n}",
+      "24": "void Solver::rephase() {\n    rephases = 0;\n    threshold *= 0.85;\n    rephase_limit += 4096;\n    \n    // Perform phase saving update with probability based on recent performance\n    if (fast_lbd_sum > 0 && lbd_queue_size > 0) {\n        double fast_avg = fast_lbd_sum / lbd_queue_size;\n        double slow_avg = slow_lbd_sum / conflicts;\n        \n        // If recent conflicts are significantly worse than historical average,\n        // more aggressively change phases to escape local minima\n        if (fast_avg > 1.5 * slow_avg) {\n            // Reset to random phases with higher probability\n            for (int i = 1; i <= vars; i++) {\n                saved[i] = (rand() % 2 ? 1 : -1);\n            }\n        } else if (fast_avg > slow_avg) {\n            // Mild degradation - use local best phases inverted\n            for (int i = 1; i <= vars; i++) {\n                saved[i] = -local_best[i];\n            }\n        } else {\n            // Good performance - stick with local best phases\n            for (int i = 1; i <= vars; i++) {\n                saved[i] = local_best[i];\n            }\n        }\n    } else {\n        // No LBD data yet - use default random phase assignment\n        for (int i = 1; i <= vars; i++) {\n            saved[i] = (rand() % 2 ? 1 : -1);\n        }\n    }\n}",
+      "25": "void Solver::bump_var(int var, double coeff) {\n    activity[var] += var_inc * coeff;\n    if (activity[var] > 1e100) {\n        for (int i = 1; i <= vars; i++) activity[i] *= 1e-100;\n        var_inc *= 1e-100;\n    }\n    if (vsids.inHeap(var)) vsids.update(var);\n    if (coeff > 0.9) {\n        saved[var] = (value[var] == 1 ? -1 : 1);\n    }\n}",
+      "26": "else if (lbd_queue_size == 50 && conflicts > 10000 && fast_lbd_sum / lbd_queue_size > slow_lbd_sum * 1.2 / conflicts) restart();",
+      "28": "void Solver::rephase() {\n    rephases = 0;\n    \n    // Dynamically adjust threshold based on recent search progress\n    if (conflicts > 0) {\n        double recent_activity = (double)trail.size() / (double)conflicts;\n        threshold = (int)(threshold * (0.85 + 0.05 * recent_activity));\n    } else {\n        threshold = (int)(threshold * 0.9);\n    }\n    \n    // Increase rephase_limit more aggressively early, then stabilize\n    if (rephase_limit < 32768) {\n        rephase_limit += 8192;\n    } else {\n        rephase_limit += 4096;\n    }\n    \n    // Update local_best based on current trail assignments\n    for (int i = 1; i <= vars; i++) {\n        if (value[i] != 0) {\n            local_best[i] = value[i];\n        }\n    }\n}",
+      "29": "void Solver::bump_var(int var, double coeff) {\n    double inc = var_inc * coeff;\n    activity[var] += inc;\n    \n    // Adaptive decay based on recent conflict rate\n    if (conflicts > 0) {\n        double conflict_rate = (double)conflicts / (trail.size() + 1);\n        if (conflict_rate > 0.05) {\n            inc *= 1.2;\n        }\n    }\n    \n    // Variable aging: reduce activity of older variables\n    if (level[var] > 0) {\n        double age_factor = 1.0 / (1.0 + 0.01 * conflicts);\n        activity[var] *= age_factor;\n    }\n    \n    // Prevent overflow with smarter scaling\n    if (activity[var] > 1e100) {\n        double scale = 1e-100;\n        for (int i = 1; i <= vars; i++) activity[i] *= scale;\n        var_inc *= scale;\n    }\n    \n    // Update heap if variable is present\n    if (vsids.inHeap(var)) vsids.update(var);\n}",
+      "30": "else if (lbd_queue_size == 50 && conflicts > 100 && (fast_lbd_sum / lbd_queue_size) > 1.5 * (slow_lbd_sum / conflicts) && trail.size() > 0.9 * threshold) restart();",
+      "32": "void Solver::rephase() {\n    // Adaptive rephasing: adjust based on solver progress\n    rephases = 0; // Reset counter for new rephasing cycle\n    \n    // Dynamically adjust threshold based on recent trail size variation\n    if (trail.size() > threshold * 1.2) {\n        // If trail has grown significantly, increase threshold more aggressively\n        threshold *= 1.05;\n    } else if (trail.size() < threshold * 0.8) {\n        // If trail has shrunk, tighten threshold\n        threshold *= 0.85;\n    } else {\n        // Default decay\n        threshold *= 0.9;\n    }\n    \n    // Adaptive rephase_limit scaling based on conflict rate\n    double conflict_rate = (double)conflicts / (restarts > 0 ? restarts : 1);\n    if (conflict_rate > 1000) {\n        // High conflict rate: allow more rephases to escape local minima\n        rephase_limit += 16384;\n    } else if (conflict_rate < 100) {\n        // Low conflict rate: be conservative with rephases\n        rephase_limit += 4096;\n    } else {\n        // Moderate conflict rate: standard increment\n        rephase_limit += 8192;\n    }\n    \n    // Random perturbation to escape stagnation\n    if (rand() % 100 < 20) {\n        for (int i = 1; i <= vars; i++) {\n            if (rand() % 100 < 30) {\n                saved[i] = -saved[i]; // Flip some saved phases\n            }\n        }\n    }\n    \n    // Update local_best based on current assignment if trail is non-empty\n    if (!trail.empty()) {\n        for (int i = 1; i <= vars; i++) {\n            if (value[i] != 0) {\n                local_best[i] = value[i];\n            }\n        }\n    }\n}",
+      "33": "void Solver::bump_var(int var, double coeff) {\n    activity[var] += var_inc * coeff;\n    if (activity[var] > 1e100) {\n        double rescale = 1e-100;\n        for (int i = 1; i <= vars; i++) activity[i] *= rescale;\n        var_inc *= rescale;\n    }\n    if (vsids.inHeap(var)) vsids.update(var);\n}",
+      "34": "else if (lbd_queue_size >= 30 && conflicts > 1000 && 1.2 * fast_lbd_sum / lbd_queue_size < slow_lbd_sum / conflicts) restart();",
+      "36": "void Solver::rephase() {\n    // Increment rephase counter\n    rephases++;\n\n    // Adjust threshold based on trail length trend\n    if (trail.size() > threshold) {\n        // If trail is growing, increase threshold more aggressively\n        threshold = trail.size() * 1.1;\n    } else {\n        // If trail is shrinking, reduce threshold moderately\n        threshold *= 0.85;\n    }\n\n    // Dynamically adjust rephase_limit based on solver performance\n    if (conflicts > 0) {\n        double conflict_rate = (double)conflicts / restarts;\n        if (conflict_rate > 50.0) {\n            // High conflict rate: increase rephase_limit more aggressively\n            rephase_limit += 16384;\n        } else if (conflict_rate < 10.0) {\n            // Low conflict rate: increase rephase_limit conservatively\n            rephase_limit += 4096;\n        } else {\n            // Moderate conflict rate: standard increase\n            rephase_limit += 8192;\n        }\n    }\n    \n    // Apply phase diversification periodically\n    if (rephases % 5 == 0) {\n        // Every 5th rephase, diversify phases more aggressively\n        for (int i = 1; i <= vars; i++) {\n            if (rand() % 100 < 40) {  // 40% chance to flip phase\n                saved[i] = -saved[i];\n            }\n        }\n    } else {\n        // Normal rephase: update saved phases based on recent assignments\n        for (int i = 1; i <= vars; i++) {\n            if (value[i] != 0) {\n                // If variable has been assigned recently, save that phase\n                saved[i] = value[i];\n            }\n        }\n    }\n}",
+      "37": "void Solver::bump_var(int var, double coeff) {\n    // Scale coefficient by base factor\n    double scaled_coeff = coeff * var_inc;\n    // Add scaled activity\n    activity[var] += scaled_coeff;\n\n    // Periodically decay all activities to maintain numerical stability\n    if (activity[var] > 1e100) {\n        for (int i = 1; i <= vars; i++) {\n            activity[i] *= 1e-100;\n        }\n        var_inc *= 1e-100;\n    }\n\n    // Update heap position if variable is in heap\n    if (vsids.inHeap(var)) {\n        vsids.update(var);\n    }\n}",
+      "38": "else if (lbd_queue_size == 50 && fast_lbd_sum / lbd_queue_size > 1.2 * slow_lbd_sum / conflicts && conflicts > 1000) restart();",
+      "39": "void Solver::restart() {\n    fast_lbd_sum = lbd_queue_size = lbd_queue_pos = 0;\n    backtrack(0);\n    int phase_rand = rand() % 100;\n    if ((phase_rand -= 40) < 0)     for (int i = 1; i <= vars; i++) saved[i] = local_best[i];\n    else if ((phase_rand -= 10) < 0) for (int i = 1; i <= vars; i++) saved[i] = -local_best[i];\n    else if ((phase_rand -= 10) < 0)for (int i = 1; i <= vars; i++) saved[i] = rand() % 2 ? 1 : -1;\n    else ;\n}",
+      "40": "void Solver::rephase() {\n    rephases = 0;\n    threshold *= 0.85;  // Slightly more aggressive threshold reduction\n    rephase_limit += 10240;  // Increase limit more than original\n    \n    // Update saved phases based on current solver state\n    int phase_rand = rand() % 100;\n    \n    if (phase_rand < 40) {\n        // Use current trail as guidance (local search)\n        for (int i = 1; i <= vars; i++) {\n            if (value[i] != 0) saved[i] = value[i];  // Use current assignment\n            else saved[i] = local_best[i];           // Fallback to local best\n        }\n    } else if (phase_rand < 60) {\n        // Invert current best phase\n        for (int i = 1; i <= vars; i++) saved[i] = -local_best[i];\n    } else if (phase_rand < 70) {\n        // Random phase assignment\n        for (int i = 1; i <= vars; i++) saved[i] = rand() % 2 ? 1 : -1;\n    } else if (phase_rand < 85) {\n        // Use activity-based phase selection (VSIDS heuristic)\n        for (int i = 1; i <= vars; i++) {\n            if (activity[i] > 0) saved[i] = 1;  // Higher activity => positive\n            else saved[i] = -1;\n        }\n    } else {\n        // Mixed strategy: combine current value with local best\n        for (int i = 1; i <= vars; i++) {\n            if (value[i] != 0) {\n                saved[i] = value[i];\n            } else if (rand() % 100 < 70) {\n                saved[i] = local_best[i];\n            } else {\n                saved[i] = rand() % 2 ? 1 : -1;\n            }\n        }\n    }\n}",
+      "41": "void Solver::bump_var(int var, double coeff) {\n    // Apply exponential decay to maintain heap competitiveness\n    activity[var] += var_inc * coeff;\n    \n    // Scale down less frequently but more aggressively to prevent overflow\n    if (activity[var] > 1e150) {\n        double scale_factor = 1e-100;\n        for (int i = 1; i <= vars; i++) activity[i] *= scale_factor;\n        var_inc *= scale_factor;\n    }\n    \n    // Update heap position if variable is in heap\n    if (vsids.inHeap(var)) vsids.update(var);\n}",
+      "42": "else if (lbd_queue_size >= 25 && (fast_lbd_sum * 0.85 / lbd_queue_size > slow_lbd_sum * 1.2 / conflicts) && conflicts > 1000) restart();",
+      "44": "void Solver::rephase() {\n    rephases = 0;\n    threshold *= 0.85;\n    rephase_limit += 4096;\n    \n    // Perform phase reset based on local_best heuristic\n    for (int i = 1; i <= vars; i++) {\n        if (value[i] != 0) {\n            // Reset saved phases to favor local best assignments\n            saved[i] = local_best[i] != 0 ? local_best[i] : (rand() % 2 ? 1 : -1);\n        }\n    }\n}"
+    },
+    "PAR-2": {
+      "0": 9088,
+      "1": 11267,
+      "2": 82432,
+      "3": 10020,
+      "4": 8607,
+      "5": 11399,
+      "6": 28253,
+      "7": 8938,
+      "8": 8539,
+      "9": 11321,
+      "10": 11086,
+      "11": 10477,
+      "12": 10216,
+      "13": 11330,
+      "14": 11031,
+      "15": 19612,
+      "16": 10607,
+      "17": 11369,
+      "18": 14035,
+      "19": 10479,
+      "20": 8955,
+      "21": 11338,
+      "22": 18696,
+      "23": 9000,
+      "24": 8730,
+      "25": 11400,
+      "26": 12161,
+      "28": 10773,
+      "29": 97933,
+      "30": 82450,
+      "32": 10975,
+      "33": 11326,
+      "34": 20043,
+      "36": 11455,
+      "37": 11215,
+      "38": 8622,
+      "39": 8141,
+      "40": 9316,
+      "41": 7341,
+      "42": 10651,
+      "44": 9401
+    },
+    "satisfiable": {
+      "0": 5
+    },
+    "unsatisfiable": {
+      "0": 7
+    },
+    "timeout": {
+      "0": 0
+    }
+  },
+  "answers": {
+    "1": "void Solver::bump_var(int var, double coeff) {\n    activity[var] += var_inc * coeff;\n    if (activity[var] > 1e100) {\n        for (int v = 1; v <= vars; v++) {\n            activity[v] *= 1e-100;\n        }\n        var_inc *= 1e-100;\n    }\n    if (vsids.inHeap(var)) {\n        vsids.update(var);\n    }\n}",
+    "2": "else if (lbd_queue_size >= 30 && conflicts > 500 && fast_lbd_sum > 2.5 * slow_lbd_sum && trail.size() > threshold * 0.7) restart();",
+    "3": "void Solver::restart() {\n    fast_lbd_sum = lbd_queue_size = lbd_queue_pos = 0;\n    backtrack(0);\n    int phase_rand = rand() % 100;\n    if ((phase_rand -= 70) < 0)     for (int i = 1; i <= vars; i++) saved[i] = local_best[i];\n    else if ((phase_rand -= 5) < 0) for (int i = 1; i <= vars; i++) saved[i] = -local_best[i];\n    else if ((phase_rand -= 10) < 0)for (int i = 1; i <= vars; i++) saved[i] = rand() % 2 ? 1 : -1;\n    else ;\n}",
+    "4": "void Solver::rephase() {\n    rephases = 0;\n    threshold *= 0.95;\n    rephase_limit += 4096;\n    // Update saved phases based on local_best or random with different probabilities\n    int phase_rand = rand() % 100;\n    if (phase_rand < 70) {\n        // 70% chance: set saved to local_best (exploitation)\n        for (int i = 1; i <= vars; i++) saved[i] = local_best[i];\n    } else if (phase_rand < 80) {\n        // 10% chance: set saved to opposite of local_best (diversification)\n        for (int i = 1; i <= vars; i++) saved[i] = -local_best[i];\n    } else if (phase_rand < 95) {\n        // 15% chance: random phase\n        for (int i = 1; i <= vars; i++) saved[i] = rand() % 2 ? 1 : -1;\n    } else {\n        // 5% chance: clear saved (let VSIDS decide polarity)\n        for (int i = 1; i <= vars; i++) saved[i] = 0;\n    }\n}",
+    "5": "void Solver::bump_var(int var, double coeff) {\n    double bump = var_inc * coeff;\n    activity[var] += bump;\n    if (activity[var] > 1e100) {\n        for (int i = 1; i <= vars; i++) activity[i] *= 1e-100;\n        var_inc *= 1e-100;\n    }\n    if (vsids.inHeap(var)) vsids.update(var);\n}",
+    "6": "else if (lbd_queue_size >= 45 && 0.7 * fast_lbd_sum / lbd_queue_size > slow_lbd_sum / conflicts && conflicts > 1000) restart();",
+    "7": "void Solver::restart() {\n    fast_lbd_sum = lbd_queue_size = lbd_queue_pos = 0;\n    backtrack(0);\n    int phase_rand = rand() % 100;\n    if ((phase_rand -= 50) < 0)     for (int i = 1; i <= vars; i++) saved[i] = local_best[i];\n    else if ((phase_rand -= 10) < 0) for (int i = 1; i <= vars; i++) saved[i] = -local_best[i];\n    else if ((phase_rand -= 30) < 0) for (int i = 1; i <= vars; i++) saved[i] = rand() % 2 ? 1 : -1;\n    else ;\n}",
+    "8": "void Solver::rephase() {\n    rephases = 0;\n    threshold *= 0.85; // make rephase more frequent\n    rephase_limit += 4096; // smaller increment than original\n\n    int choice = rand() % 100;\n    if (choice < 40) {\n        // use current trail values as phase\n        for (int i = 1; i <= vars; i++) {\n            saved[i] = value[i];\n        }\n    } else if (choice < 70) {\n        // invert current trail values\n        for (int i = 1; i <= vars; i++) {\n            saved[i] = -value[i];\n        }\n    } else if (choice < 90) {\n        // use local best phase\n        for (int i = 1; i <= vars; i++) {\n            saved[i] = local_best[i];\n        }\n    } else {\n        // random phase\n        for (int i = 1; i <= vars; i++) {\n            saved[i] = rand() % 2 ? 1 : -1;\n        }\n    }\n}",
+    "9": "void Solver::bump_var(int var, double coeff) {\n    double bump = var_inc * coeff;\n    activity[var] += bump;\n    if (activity[var] > 1e100) {\n        double scale = 1e-100;\n        for (int i = 1; i <= vars; i++) activity[i] *= scale;\n        var_inc *= scale;\n    }\n    if (vsids.inHeap(var)) vsids.update(var);\n}",
+    "10": "else if (lbd_queue_size == 50 && 0.7 * fast_lbd_sum / lbd_queue_size > slow_lbd_sum / conflicts && conflicts > 1000) restart();",
+    "11": "void Solver::restart() {\n    fast_lbd_sum = lbd_queue_size = lbd_queue_pos = 0;\n    backtrack(0);\n    int phase_rand = rand() % 100;\n    if ((phase_rand -= 70) < 0) {\n        for (int i = 1; i <= vars; i++) saved[i] = local_best[i];\n    } else if ((phase_rand -= 10) < 0) {\n        for (int i = 1; i <= vars; i++) saved[i] = -local_best[i];\n    } else if ((phase_rand -= 15) < 0) {\n        for (int i = 1; i <= vars; i++) saved[i] = rand() % 2 ? 1 : -1;\n    }\n}",
+    "12": "void Solver::rephase() {\n    rephases = 0;\n    threshold = trail.size() * 0.9;\n    rephase_limit += 8192;\n    for (int i = 1; i <= vars; i++) {\n        if (rand() % 100 < 20) {\n            saved[i] = -saved[i];\n        }\n    }\n}",
+    "13": "void Solver::bump_var(int var, double coeff) {\n    activity[var] += var_inc * coeff;\n    if (activity[var] > 1e100) {\n        double scale = 1e-100;\n        for (int i = 1; i <= vars; i++) activity[i] *= scale;\n        var_inc *= scale;\n    }\n    if (vsids.inHeap(var)) vsids.update(var);\n}",
+    "14": "else if (lbd_queue_size == 50 && 0.7 * fast_lbd_sum / lbd_queue_size > slow_lbd_sum / conflicts && conflicts > 1000) restart();",
+    "15": "void Solver::restart() {\n    fast_lbd_sum = lbd_queue_size = lbd_queue_pos = 0;\n    backtrack(0);\n    int phase_rand = rand() % 100;\n    if ((phase_rand -= 40) < 0)     for (int i = 1; i <= vars; i++) saved[i] = local_best[i];\n    else if ((phase_rand -= 30) < 0) for (int i = 1; i <= vars; i++) saved[i] = -local_best[i];\n    else if ((phase_rand -= 20) < 0) for (int i = 1; i <= vars; i++) saved[i] = rand() % 2 ? 1 : -1;\n    else ;\n}",
+    "16": "void Solver::rephase() {\n    rephases = 0;\n    threshold *= 0.85;  // Slightly more aggressive reduction than original 0.9\n    rephase_limit += 16384;  // Double the original increment\n    \n    // Update saved phases based on recent assignments during this phase\n    for (int i = 1; i <= vars; i++) {\n        if (value[i] != 0) {  // Variable has been assigned in current search\n            saved[i] = value[i];  // Save current assignment as preferred phase\n        } else if (rand() % 100 < 30) {  // 30% chance to randomize unassigned vars\n            saved[i] = rand() % 2 ? 1 : -1;\n        }\n        // Otherwise keep existing saved phase\n    }\n}",
+    "17": "void Solver::bump_var(int var, double coeff) {\n    if (level[var] <= 0) return;\n    activity[var] += var_inc * coeff;\n    if (activity[var] > 1e100) {\n        for (int i = 1; i <= vars; i++) activity[i] *= 1e-100;\n        var_inc *= 1e-100;\n    }\n    if (vsids.inHeap(var)) vsids.update(var);\n}",
+    "18": "else if (lbd_queue_size == 60 && 0.85 * fast_lbd_sum / lbd_queue_size > slow_lbd_sum / (conflicts + 1)) restart();",
+    "19": "void Solver::restart() {\n    fast_lbd_sum = lbd_queue_size = lbd_queue_pos = 0;\n    backtrack(0);\n    int phase_rand = rand() % 100;\n    if ((phase_rand -= 70) < 0) {\n        for (int i = 1; i <= vars; i++) saved[i] = local_best[i];\n    } else if ((phase_rand -= 10) < 0) {\n        for (int i = 1; i <= vars; i++) saved[i] = -local_best[i];\n    } else if ((phase_rand -= 10) < 0) {\n        for (int i = 1; i <= vars; i++) saved[i] = rand() % 2 ? 1 : -1;\n    } else {\n        for (int i = 1; i <= vars; i++) saved[i] = value[i] == 0 ? (rand() % 2 ? 1 : -1) : value[i];\n    }\n}",
+    "20": "void Solver::rephase() {\n    rephases = 0;\n    threshold = std::max(threshold * 0.95, 100.0);\n    rephase_limit += 4096;\n}",
+    "21": "void Solver::bump_var(int var, double coeff) {\n    activity[var] += var_inc * coeff;\n    if (activity[var] > 1e100) {\n        for (int i = 1; i <= vars; i++) activity[i] *= 1e-100;\n        var_inc *= 1e-100;\n    }\n    if (vsids.inHeap(var)) vsids.update(var);\n}",
+    "22": "else if (lbd_queue_size == 50 && fast_lbd_sum / lbd_queue_size > slow_lbd_sum / conflicts && conflicts > 10000) restart();",
+    "23": "void Solver::restart() {\n    fast_lbd_sum = lbd_queue_size = lbd_queue_pos = 0;\n    backtrack(0);\n    int phase_rand = rand() % 100;\n    if ((phase_rand -= 50) < 0) {\n        for (int i = 1; i <= vars; i++) saved[i] = (rand() % 2 ? 1 : -1);\n    } else if ((phase_rand -= 30) < 0) {\n        for (int i = 1; i <= vars; i++) saved[i] = local_best[i];\n    } else {\n        for (int i = 1; i <= vars; i++) saved[i] = -local_best[i];\n    }\n}",
+    "24": "void Solver::rephase() {\n    rephases = 0;\n    threshold *= 0.85;\n    rephase_limit += 4096;\n    \n    // Perform phase saving update with probability based on recent performance\n    if (fast_lbd_sum > 0 && lbd_queue_size > 0) {\n        double fast_avg = fast_lbd_sum / lbd_queue_size;\n        double slow_avg = slow_lbd_sum / conflicts;\n        \n        // If recent conflicts are significantly worse than historical average,\n        // more aggressively change phases to escape local minima\n        if (fast_avg > 1.5 * slow_avg) {\n            // Reset to random phases with higher probability\n            for (int i = 1; i <= vars; i++) {\n                saved[i] = (rand() % 2 ? 1 : -1);\n            }\n        } else if (fast_avg > slow_avg) {\n            // Mild degradation - use local best phases inverted\n            for (int i = 1; i <= vars; i++) {\n                saved[i] = -local_best[i];\n            }\n        } else {\n            // Good performance - stick with local best phases\n            for (int i = 1; i <= vars; i++) {\n                saved[i] = local_best[i];\n            }\n        }\n    } else {\n        // No LBD data yet - use default random phase assignment\n        for (int i = 1; i <= vars; i++) {\n            saved[i] = (rand() % 2 ? 1 : -1);\n        }\n    }\n}",
+    "25": "void Solver::bump_var(int var, double coeff) {\n    activity[var] += var_inc * coeff;\n    if (activity[var] > 1e100) {\n        for (int i = 1; i <= vars; i++) activity[i] *= 1e-100;\n        var_inc *= 1e-100;\n    }\n    if (vsids.inHeap(var)) vsids.update(var);\n    if (coeff > 0.9) {\n        saved[var] = (value[var] == 1 ? -1 : 1);\n    }\n}",
+    "26": "else if (lbd_queue_size == 50 && conflicts > 10000 && fast_lbd_sum / lbd_queue_size > slow_lbd_sum * 1.2 / conflicts) restart();",
+    "27": "else if (lbd_queue_size == 50 && conflicts > 5000 && fast_lbd_sum / lbd_queue_size * 0.8 > slow_lbd_sum * 1.1 / conflicts) restart();",
+    "28": "void Solver::rephase() {\n    rephases = 0;\n    \n    // Dynamically adjust threshold based on recent search progress\n    if (conflicts > 0) {\n        double recent_activity = (double)trail.size() / (double)conflicts;\n        threshold = (int)(threshold * (0.85 + 0.05 * recent_activity));\n    } else {\n        threshold = (int)(threshold * 0.9);\n    }\n    \n    // Increase rephase_limit more aggressively early, then stabilize\n    if (rephase_limit < 32768) {\n        rephase_limit += 8192;\n    } else {\n        rephase_limit += 4096;\n    }\n    \n    // Update local_best based on current trail assignments\n    for (int i = 1; i <= vars; i++) {\n        if (value[i] != 0) {\n            local_best[i] = value[i];\n        }\n    }\n}",
+    "29": "void Solver::bump_var(int var, double coeff) {\n    double inc = var_inc * coeff;\n    activity[var] += inc;\n    \n    // Adaptive decay based on recent conflict rate\n    if (conflicts > 0) {\n        double conflict_rate = (double)conflicts / (trail.size() + 1);\n        if (conflict_rate > 0.05) {\n            inc *= 1.2;\n        }\n    }\n    \n    // Variable aging: reduce activity of older variables\n    if (level[var] > 0) {\n        double age_factor = 1.0 / (1.0 + 0.01 * conflicts);\n        activity[var] *= age_factor;\n    }\n    \n    // Prevent overflow with smarter scaling\n    if (activity[var] > 1e100) {\n        double scale = 1e-100;\n        for (int i = 1; i <= vars; i++) activity[i] *= scale;\n        var_inc *= scale;\n    }\n    \n    // Update heap if variable is present\n    if (vsids.inHeap(var)) vsids.update(var);\n}",
+    "30": "else if (lbd_queue_size == 50 && conflicts > 100 && (fast_lbd_sum / lbd_queue_size) > 1.5 * (slow_lbd_sum / conflicts) && trail.size() > 0.9 * threshold) restart();",
+    "31": "else if (lbd_queue_size == 50 && conflicts > 100 && (fast_lbd_sum / lbd_queue_size) > 1.3 * (slow_lbd_sum / conflicts) && rephases < 3) restart();",
+    "32": "void Solver::rephase() {\n    // Adaptive rephasing: adjust based on solver progress\n    rephases = 0; // Reset counter for new rephasing cycle\n    \n    // Dynamically adjust threshold based on recent trail size variation\n    if (trail.size() > threshold * 1.2) {\n        // If trail has grown significantly, increase threshold more aggressively\n        threshold *= 1.05;\n    } else if (trail.size() < threshold * 0.8) {\n        // If trail has shrunk, tighten threshold\n        threshold *= 0.85;\n    } else {\n        // Default decay\n        threshold *= 0.9;\n    }\n    \n    // Adaptive rephase_limit scaling based on conflict rate\n    double conflict_rate = (double)conflicts / (restarts > 0 ? restarts : 1);\n    if (conflict_rate > 1000) {\n        // High conflict rate: allow more rephases to escape local minima\n        rephase_limit += 16384;\n    } else if (conflict_rate < 100) {\n        // Low conflict rate: be conservative with rephases\n        rephase_limit += 4096;\n    } else {\n        // Moderate conflict rate: standard increment\n        rephase_limit += 8192;\n    }\n    \n    // Random perturbation to escape stagnation\n    if (rand() % 100 < 20) {\n        for (int i = 1; i <= vars; i++) {\n            if (rand() % 100 < 30) {\n                saved[i] = -saved[i]; // Flip some saved phases\n            }\n        }\n    }\n    \n    // Update local_best based on current assignment if trail is non-empty\n    if (!trail.empty()) {\n        for (int i = 1; i <= vars; i++) {\n            if (value[i] != 0) {\n                local_best[i] = value[i];\n            }\n        }\n    }\n}",
+    "33": "void Solver::bump_var(int var, double coeff) {\n    activity[var] += var_inc * coeff;\n    if (activity[var] > 1e100) {\n        double rescale = 1e-100;\n        for (int i = 1; i <= vars; i++) activity[i] *= rescale;\n        var_inc *= rescale;\n    }\n    if (vsids.inHeap(var)) vsids.update(var);\n}",
+    "34": "else if (lbd_queue_size >= 30 && conflicts > 1000 && 1.2 * fast_lbd_sum / lbd_queue_size < slow_lbd_sum / conflicts) restart();",
+    "35": "else if (lbd_queue_size == 50 && fast_lbd_sum * 5 < lbd_queue_size * slow_lbd_sum / conflicts) restart();",
+    "36": "void Solver::rephase() {\n    // Increment rephase counter\n    rephases++;\n\n    // Adjust threshold based on trail length trend\n    if (trail.size() > threshold) {\n        // If trail is growing, increase threshold more aggressively\n        threshold = trail.size() * 1.1;\n    } else {\n        // If trail is shrinking, reduce threshold moderately\n        threshold *= 0.85;\n    }\n\n    // Dynamically adjust rephase_limit based on solver performance\n    if (conflicts > 0) {\n        double conflict_rate = (double)conflicts / restarts;\n        if (conflict_rate > 50.0) {\n            // High conflict rate: increase rephase_limit more aggressively\n            rephase_limit += 16384;\n        } else if (conflict_rate < 10.0) {\n            // Low conflict rate: increase rephase_limit conservatively\n            rephase_limit += 4096;\n        } else {\n            // Moderate conflict rate: standard increase\n            rephase_limit += 8192;\n        }\n    }\n    \n    // Apply phase diversification periodically\n    if (rephases % 5 == 0) {\n        // Every 5th rephase, diversify phases more aggressively\n        for (int i = 1; i <= vars; i++) {\n            if (rand() % 100 < 40) {  // 40% chance to flip phase\n                saved[i] = -saved[i];\n            }\n        }\n    } else {\n        // Normal rephase: update saved phases based on recent assignments\n        for (int i = 1; i <= vars; i++) {\n            if (value[i] != 0) {\n                // If variable has been assigned recently, save that phase\n                saved[i] = value[i];\n            }\n        }\n    }\n}",
+    "37": "void Solver::bump_var(int var, double coeff) {\n    // Scale coefficient by base factor\n    double scaled_coeff = coeff * var_inc;\n    // Add scaled activity\n    activity[var] += scaled_coeff;\n\n    // Periodically decay all activities to maintain numerical stability\n    if (activity[var] > 1e100) {\n        for (int i = 1; i <= vars; i++) {\n            activity[i] *= 1e-100;\n        }\n        var_inc *= 1e-100;\n    }\n\n    // Update heap position if variable is in heap\n    if (vsids.inHeap(var)) {\n        vsids.update(var);\n    }\n}",
+    "38": "else if (lbd_queue_size == 50 && fast_lbd_sum / lbd_queue_size > 1.2 * slow_lbd_sum / conflicts && conflicts > 1000) restart();",
+    "39": "void Solver::restart() {\n    fast_lbd_sum = lbd_queue_size = lbd_queue_pos = 0;\n    backtrack(0);\n    int phase_rand = rand() % 100;\n    if ((phase_rand -= 40) < 0)     for (int i = 1; i <= vars; i++) saved[i] = local_best[i];\n    else if ((phase_rand -= 10) < 0) for (int i = 1; i <= vars; i++) saved[i] = -local_best[i];\n    else if ((phase_rand -= 10) < 0)for (int i = 1; i <= vars; i++) saved[i] = rand() % 2 ? 1 : -1;\n    else ;\n}",
+    "40": "void Solver::rephase() {\n    rephases = 0;\n    threshold *= 0.85;  // Slightly more aggressive threshold reduction\n    rephase_limit += 10240;  // Increase limit more than original\n    \n    // Update saved phases based on current solver state\n    int phase_rand = rand() % 100;\n    \n    if (phase_rand < 40) {\n        // Use current trail as guidance (local search)\n        for (int i = 1; i <= vars; i++) {\n            if (value[i] != 0) saved[i] = value[i];  // Use current assignment\n            else saved[i] = local_best[i];           // Fallback to local best\n        }\n    } else if (phase_rand < 60) {\n        // Invert current best phase\n        for (int i = 1; i <= vars; i++) saved[i] = -local_best[i];\n    } else if (phase_rand < 70) {\n        // Random phase assignment\n        for (int i = 1; i <= vars; i++) saved[i] = rand() % 2 ? 1 : -1;\n    } else if (phase_rand < 85) {\n        // Use activity-based phase selection (VSIDS heuristic)\n        for (int i = 1; i <= vars; i++) {\n            if (activity[i] > 0) saved[i] = 1;  // Higher activity => positive\n            else saved[i] = -1;\n        }\n    } else {\n        // Mixed strategy: combine current value with local best\n        for (int i = 1; i <= vars; i++) {\n            if (value[i] != 0) {\n                saved[i] = value[i];\n            } else if (rand() % 100 < 70) {\n                saved[i] = local_best[i];\n            } else {\n                saved[i] = rand() % 2 ? 1 : -1;\n            }\n        }\n    }\n}",
+    "41": "void Solver::bump_var(int var, double coeff) {\n    // Apply exponential decay to maintain heap competitiveness\n    activity[var] += var_inc * coeff;\n    \n    // Scale down less frequently but more aggressively to prevent overflow\n    if (activity[var] > 1e150) {\n        double scale_factor = 1e-100;\n        for (int i = 1; i <= vars; i++) activity[i] *= scale_factor;\n        var_inc *= scale_factor;\n    }\n    \n    // Update heap position if variable is in heap\n    if (vsids.inHeap(var)) vsids.update(var);\n}",
+    "42": "else if (lbd_queue_size >= 25 && (fast_lbd_sum * 0.85 / lbd_queue_size > slow_lbd_sum * 1.2 / conflicts) && conflicts > 1000) restart();",
+    "43": "else if (lbd_queue_size >= 25 && (fast_lbd_sum * 0.95 / lbd_queue_size > slow_lbd_sum * 1.05 / conflicts) && conflicts > 5000) restart();",
+    "44": "void Solver::rephase() {\n    rephases = 0;\n    threshold *= 0.85;\n    rephase_limit += 4096;\n    \n    // Perform phase reset based on local_best heuristic\n    for (int i = 1; i <= vars; i++) {\n        if (value[i] != 0) {\n            // Reset saved phases to favor local best assignments\n            saved[i] = local_best[i] != 0 ? local_best[i] : (rand() % 2 ? 1 : -1);\n        }\n    }\n}"
+  },
+  "extra_params": {
+    "1": {
+      "lbd_queue_size": "50"
+    },
+    "2": {
+      "lbd_queue_size": "30"
+    },
+    "3": {
+      "lbd_queue_size": "50"
+    },
+    "4": {
+      "lbd_queue_size": "50"
+    },
+    "5": {
+      "lbd_queue_size": "50"
+    },
+    "6": {
+      "lbd_queue_size": "45"
+    },
+    "7": {
+      "lbd_queue_size": "50"
+    },
+    "8": {
+      "lbd_queue_size": "50"
+    },
+    "9": {
+      "lbd_queue_size": "50"
+    },
+    "10": {
+      "lbd_queue_size": "50"
+    },
+    "11": {
+      "lbd_queue_size": "50"
+    },
+    "12": {
+      "lbd_queue_size": "50"
+    },
+    "13": {
+      "lbd_queue_size": "50"
+    },
+    "14": {
+      "lbd_queue_size": "50"
+    },
+    "15": {
+      "lbd_queue_size": "50"
+    },
+    "16": {
+      "lbd_queue_size": "50"
+    },
+    "17": {
+      "lbd_queue_size": "50"
+    },
+    "18": {
+      "lbd_queue_size": "60"
+    },
+    "19": {
+      "lbd_queue_size": "50"
+    },
+    "20": {
+      "lbd_queue_size": "50"
+    },
+    "21": {
+      "lbd_queue_size": "50"
+    },
+    "22": {
+      "lbd_queue_size": "50"
+    },
+    "23": {
+      "lbd_queue_size": "50"
+    },
+    "24": {
+      "lbd_queue_size": "50"
+    },
+    "25": {
+      "lbd_queue_size": "50"
+    },
+    "26": {
+      "lbd_queue_size": "50"
+    },
+    "27": {
+      "lbd_queue_size": "50"
+    },
+    "28": {
+      "lbd_queue_size": "50"
+    },
+    "29": {
+      "lbd_queue_size": "50"
+    },
+    "30": {
+      "lbd_queue_size": "50"
+    },
+    "31": {
+      "lbd_queue_size": "50"
+    },
+    "32": {
+      "lbd_queue_size": "50"
+    },
+    "33": {
+      "lbd_queue_size": "50"
+    },
+    "34": {
+      "lbd_queue_size": "30"
+    },
+    "35": {
+      "lbd_queue_size": "50"
+    },
+    "36": {
+      "lbd_queue_size": "50"
+    },
+    "37": {
+      "lbd_queue_size": "50"
+    },
+    "38": {
+      "lbd_queue_size": "50"
+    },
+    "39": {
+      "lbd_queue_size": "50"
+    },
+    "40": {
+      "lbd_queue_size": "50"
+    },
+    "41": {
+      "lbd_queue_size": "50"
+    },
+    "42": {
+      "lbd_queue_size": "25"
+    },
+    "43": {
+      "lbd_queue_size": "50"
+    },
+    "44": {
+      "lbd_queue_size": "50"
+    }
+  },
+  "best_result": {
+    "44": [
+      9401,
+      "void Solver::rephase() {\n    rephases = 0;\n    threshold *= 0.85;\n    rephase_limit += 4096;\n    \n    // Perform phase reset based on local_best heuristic\n    for (int i = 1; i <= vars; i++) {\n        if (value[i] != 0) {\n            // Reset saved phases to favor local best assignments\n            saved[i] = local_best[i] != 0 ? local_best[i] : (rand() % 2 ? 1 : -1);\n        }\n    }\n}",
+      9401
+    ]
+  },
+  "saved_at": 1777621736.8040001
+}

@@ -1,0 +1,20 @@
+{
+  "time": {
+    "41": 7341
+  },
+  "prompt": {
+    "41": "void Solver::bump_var(int var, double coeff) {\n    // Apply exponential decay to maintain heap competitiveness\n    activity[var] += var_inc * coeff;\n    \n    // Scale down less frequently but more aggressively to prevent overflow\n    if (activity[var] > 1e150) {\n        double scale_factor = 1e-100;\n        for (int i = 1; i <= vars; i++) activity[i] *= scale_factor;\n        var_inc *= scale_factor;\n    }\n    \n    // Update heap position if variable is in heap\n    if (vsids.inHeap(var)) vsids.update(var);\n}"
+  },
+  "PAR-2": {
+    "41": 7341
+  },
+  "satisfiable": {
+    "41": 5
+  },
+  "unsatisfiable": {
+    "41": 7
+  },
+  "timeout": {
+    "41": 0
+  }
+}

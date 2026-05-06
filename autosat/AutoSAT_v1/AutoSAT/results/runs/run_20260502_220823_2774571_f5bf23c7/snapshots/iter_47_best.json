@@ -1,0 +1,7 @@
+{
+  "iter": 47,
+  "best_id": "48",
+  "time": 9725,
+  "code": "void Solver::rephase() {\n    rephases = 0;\n    threshold *= 0.9;\n    rephase_limit += 8192;\n    \n    // Mix current saved phases with local best phases based on recent performance\n    double fast_avg = lbd_queue_size == 50 ? fast_lbd_sum / 50.0 : 0;\n    double slow_avg = conflicts > 0 ? slow_lbd_sum / conflicts : 0;\n    \n    if (lbd_queue_size == 50 && fast_avg > slow_avg * 1.2) {\n        // Recent performance is worse than long-term average\n        // Reset phases to local best more aggressively\n        for (int i = 1; i <= vars; i++) {\n            if (rand() % 100 < 70) saved[i] = local_best[i];\n            else if (rand() % 100 < 10) saved[i] = -saved[i];\n        }\n    } else if (fast_avg < slow_avg * 0.8) {\n        // Recent performance is better than long-term average\n        // Keep current phases but add some noise\n        for (int i = 1; i <= vars; i++) {\n            if (rand() % 100 < 10) saved[i] = rand() % 2 ? 1 : -1;\n        }\n    } else {\n        // Balanced performance - mix current phases with local best\n        for (int i = 1; i <= vars; i++) {\n            if (rand() % 100 < 40) saved[i] = local_best[i];\n            else if (rand() % 100 < 10) saved[i] = -saved[i];\n        }\n    }\n}",
+  "PAR-2": 9725
+}

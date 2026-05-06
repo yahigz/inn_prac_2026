@@ -1,0 +1,20 @@
+{
+  "time": {
+    "44": 8409
+  },
+  "prompt": {
+    "44": "void Solver::rephase() {\n    rephases = 0;\n    threshold *= 0.8; // More aggressive reduction to trigger rephase earlier\n    rephase_limit += 4096; // Smaller increment to allow more frequent rephasing\n    // Update saved phases based on local best and random noise\n    for (int i = 1; i <= vars; i++) {\n        if (rand() % 100 < 70) saved[i] = local_best[i]; // 70% local best\n        else if (rand() % 100 < 10) saved[i] = -local_best[i]; // 10% invert local best\n        else saved[i] = rand() % 2 ? 1 : -1; // 20% random\n    }\n}"
+  },
+  "PAR-2": {
+    "44": 8409
+  },
+  "satisfiable": {
+    "44": 5
+  },
+  "unsatisfiable": {
+    "44": 7
+  },
+  "timeout": {
+    "44": 0
+  }
+}

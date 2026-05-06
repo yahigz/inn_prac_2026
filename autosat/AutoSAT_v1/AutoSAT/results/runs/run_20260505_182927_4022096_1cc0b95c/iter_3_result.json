@@ -1,0 +1,20 @@
+{
+  "time": {
+    "4": 8869
+  },
+  "prompt": {
+    "4": "void Solver::rephase() {\n    rephases = 0;\n    threshold *= 0.85;\n    rephase_limit += 4096;\n    for (int i = 1; i <= vars; i++) {\n        if (value[i] != 0 && level[i] == 0) {\n            saved[i] = value[i];\n        }\n    }\n}"
+  },
+  "PAR-2": {
+    "4": 8869
+  },
+  "satisfiable": {
+    "4": 5
+  },
+  "unsatisfiable": {
+    "4": 7
+  },
+  "timeout": {
+    "4": 0
+  }
+}

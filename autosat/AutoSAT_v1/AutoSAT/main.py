@@ -527,9 +527,10 @@ def _apply_env_overrides(args):
 
 @ray.remote
 def synchronized_asked(prompt_file_dir, count, args):
-    llm_api = get_llm_api(args)
 
-    answer = llm_api.call_api(prompt_file=prompt_file_dir)
+    llm_api = get_llm_api(args)
+    temperature = getattr(args, 'temperature', 1.0)
+    answer = llm_api.call_api(prompt_file=prompt_file_dir, temperature=temperature)
 
     answer_code = get_code(answer, seperator=['// start\n', '\n// end'])
     lbd_queue_size = get_code(answer, seperator=['// start lbd_queue_size\n', '\n// end lbd_queue_size'])
@@ -712,12 +713,16 @@ def main(args):
     result = {}  # Initialize result to avoid UnboundLocalError
 
     for i in range(loop_start, loop_end):
+
         current_task = _task_for_iteration(task_sequence, selection_mode, i, rand_seed=getattr(args, "rand_seed", 42))
         args.task = current_task
         project_dir = os.path.join(args.project, current_task)
         # clean temp results
         clean_files(folder_path=args.temp_results_dir, mode="all")
         id_list = []
+
+        # --- DEBUG: выводим task и prompt ---
+        print(f"[DEBUG] ITER {i} TASK {args.task} PROJECT_DIR {project_dir}")
 
         if i == 0:
             prompt_file_dir = os.path.join("./examples/", project_dir, "original_prompt.txt")
@@ -745,6 +750,13 @@ def main(args):
                 # No valid result from previous iteration, restart from original prompt
                 print("iteration: ", i, " (no valid results from previous iteration, using original prompt)", flush=True)
                 prompt_file_dir = os.path.join("./examples/", project_dir, "original_prompt.txt")
+
+        print(f"[DEBUG] PROMPT FILE: {prompt_file_dir}")
+        try:
+            with open(prompt_file_dir, 'r') as f:
+                print("[DEBUG] PROMPT CONTENT:\n" + f.read())
+        except Exception as e:
+            print(f"[DEBUG] PROMPT READ ERROR: {e}")
 
         start_time = time.time()
         answer_code_cur_round = {}
@@ -879,6 +891,7 @@ if __name__ == '__main__':
                         default="gpt-4-1106-preview")
     parser.add_argument('--timeout', type=int, default=1)
     parser.add_argument('--data_dir', type=str, default="data_test")
+    parser.add_argument('--temperature', type=float, default=1.0, help='LLM sampling temperature (0.0-2.0)')
     parser.add_argument('--project', type=str, default="EasySAT/")
     parser.add_argument('--task',
                         type=str,

@@ -1,0 +1,20 @@
+{
+  "time": {
+    "49": 11542
+  },
+  "prompt": {
+    "49": "void Solver::bump_var(int var, double coeff) {\n    double bump = var_inc * coeff;\n    activity[var] += bump;\n    \n    // Exponential decay for stability\n    if (activity[var] > 1e50) {\n        for (int i = 1; i <= vars; i++) {\n            activity[i] *= 1e-50;\n        }\n        var_inc *= 1e-50;\n    }\n    \n    // Adaptive bump based on recent conflict participation\n    if (conflicts > 1000) {\n        double conflict_rate = (double)conflicts / (trail.size() + 1);\n        if (conflict_rate > 0.1 && coeff > 0.8) {\n            activity[var] += bump * 0.3;\n        }\n    }\n    \n    if (vsids.inHeap(var)) vsids.update(var);\n}"
+  },
+  "PAR-2": {
+    "49": 11542
+  },
+  "satisfiable": {
+    "49": 5
+  },
+  "unsatisfiable": {
+    "49": 7
+  },
+  "timeout": {
+    "49": 0
+  }
+}

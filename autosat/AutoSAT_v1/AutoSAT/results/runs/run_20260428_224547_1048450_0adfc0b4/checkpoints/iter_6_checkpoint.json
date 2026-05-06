@@ -1,0 +1,86 @@
+{
+  "version": 1,
+  "run_id": "run_20260428_224547_1048450_0adfc0b4",
+  "next_iter": 7,
+  "results": {
+    "time": {
+      "0": 9276,
+      "1": 11731,
+      "2": 11721,
+      "3": 11684,
+      "4": 11546,
+      "5": 11335,
+      "6": 11272,
+      "7": 11281
+    },
+    "prompt": {
+      "0": "",
+      "1": "void Solver::bump_var(int var, double coeff) {\n    activity[var] += var_inc * coeff;\n    if (activity[var] > 1e100) {\n        double scale = 1e-100;\n        for (int i = 1; i <= vars; i++) activity[i] *= scale;\n        var_inc *= scale;\n    }\n    if (vsids.inHeap(var)) vsids.update(var);\n}",
+      "2": "void Solver::bump_var(int var, double coeff) {\n    activity[var] += var_inc * coeff;\n    if (activity[var] > 1e100) {\n        double rescale = 1e-100;\n        for (int i = 1; i <= vars; i++) activity[i] *= rescale;\n        var_inc *= rescale;\n    }\n    if (vsids.inHeap(var)) vsids.update(var);\n}",
+      "3": "void Solver::bump_var(int var, double coeff) {\n    activity[var] += var_inc * coeff;\n    if (activity[var] > 1e100) {\n        double rescale = 1e-100;\n        for (int i = 1; i <= vars; i++) activity[i] *= rescale;\n        var_inc *= rescale;\n    }\n    if (vsids.inHeap(var)) vsids.update(var);\n}",
+      "4": "void Solver::bump_var(int var, double coeff) {\n    activity[var] += var_inc * coeff;\n    if (activity[var] > 1e100) {\n        double rescale = 1e-100;\n        for (int i = 1; i <= vars; i++) activity[i] *= rescale;\n        var_inc *= rescale;\n    }\n    if (vsids.inHeap(var)) vsids.update(var);\n}",
+      "5": "void Solver::bump_var(int var, double coeff) {\n    activity[var] += var_inc * coeff;\n    if (activity[var] > 1e100) {\n        double rescale = 1e-100;\n        for (int i = 1; i <= vars; i++) activity[i] *= rescale;\n        var_inc *= rescale;\n    }\n    if (vsids.inHeap(var)) vsids.update(var);\n}",
+      "6": "void Solver::bump_var(int var, double coeff) {\n    activity[var] += var_inc * coeff;\n    if (activity[var] > 1e100) {\n        double rescale = 1e-100;\n        for (int i = 1; i <= vars; i++) activity[i] *= rescale;\n        var_inc *= rescale;\n    }\n    if (vsids.inHeap(var)) vsids.update(var);\n}",
+      "7": "void Solver::bump_var(int var, double coeff) {\n    activity[var] += var_inc * coeff;\n    if (activity[var] > 1e100) {\n        double rescale = 1e-100;\n        for (int i = 1; i <= vars; i++) activity[i] *= rescale;\n        var_inc *= rescale;\n    }\n    if (vsids.inHeap(var)) vsids.update(var);\n}"
+    },
+    "PAR-2": {
+      "0": 9276,
+      "1": 11731,
+      "2": 11721,
+      "3": 11684,
+      "4": 11546,
+      "5": 11335,
+      "6": 11272,
+      "7": 11281
+    },
+    "satisfiable": {
+      "0": 5
+    },
+    "unsatisfiable": {
+      "0": 7
+    },
+    "timeout": {
+      "0": 0
+    }
+  },
+  "answers": {
+    "1": "void Solver::bump_var(int var, double coeff) {\n    activity[var] += var_inc * coeff;\n    if (activity[var] > 1e100) {\n        double scale = 1e-100;\n        for (int i = 1; i <= vars; i++) activity[i] *= scale;\n        var_inc *= scale;\n    }\n    if (vsids.inHeap(var)) vsids.update(var);\n}",
+    "2": "void Solver::bump_var(int var, double coeff) {\n    activity[var] += var_inc * coeff;\n    if (activity[var] > 1e100) {\n        double rescale = 1e-100;\n        for (int i = 1; i <= vars; i++) activity[i] *= rescale;\n        var_inc *= rescale;\n    }\n    if (vsids.inHeap(var)) vsids.update(var);\n}",
+    "3": "void Solver::bump_var(int var, double coeff) {\n    activity[var] += var_inc * coeff;\n    if (activity[var] > 1e100) {\n        double rescale = 1e-100;\n        for (int i = 1; i <= vars; i++) activity[i] *= rescale;\n        var_inc *= rescale;\n    }\n    if (vsids.inHeap(var)) vsids.update(var);\n}",
+    "4": "void Solver::bump_var(int var, double coeff) {\n    activity[var] += var_inc * coeff;\n    if (activity[var] > 1e100) {\n        double rescale = 1e-100;\n        for (int i = 1; i <= vars; i++) activity[i] *= rescale;\n        var_inc *= rescale;\n    }\n    if (vsids.inHeap(var)) vsids.update(var);\n}",
+    "5": "void Solver::bump_var(int var, double coeff) {\n    activity[var] += var_inc * coeff;\n    if (activity[var] > 1e100) {\n        double rescale = 1e-100;\n        for (int i = 1; i <= vars; i++) activity[i] *= rescale;\n        var_inc *= rescale;\n    }\n    if (vsids.inHeap(var)) vsids.update(var);\n}",
+    "6": "void Solver::bump_var(int var, double coeff) {\n    activity[var] += var_inc * coeff;\n    if (activity[var] > 1e100) {\n        double rescale = 1e-100;\n        for (int i = 1; i <= vars; i++) activity[i] *= rescale;\n        var_inc *= rescale;\n    }\n    if (vsids.inHeap(var)) vsids.update(var);\n}",
+    "7": "void Solver::bump_var(int var, double coeff) {\n    activity[var] += var_inc * coeff;\n    if (activity[var] > 1e100) {\n        double rescale = 1e-100;\n        for (int i = 1; i <= vars; i++) activity[i] *= rescale;\n        var_inc *= rescale;\n    }\n    if (vsids.inHeap(var)) vsids.update(var);\n}"
+  },
+  "extra_params": {
+    "1": {
+      "lbd_queue_size": "50"
+    },
+    "2": {
+      "lbd_queue_size": "50"
+    },
+    "3": {
+      "lbd_queue_size": "50"
+    },
+    "4": {
+      "lbd_queue_size": "50"
+    },
+    "5": {
+      "lbd_queue_size": "50"
+    },
+    "6": {
+      "lbd_queue_size": "50"
+    },
+    "7": {
+      "lbd_queue_size": "50"
+    }
+  },
+  "best_result": {
+    "7": [
+      11281,
+      "void Solver::bump_var(int var, double coeff) {\n    activity[var] += var_inc * coeff;\n    if (activity[var] > 1e100) {\n        double rescale = 1e-100;\n        for (int i = 1; i <= vars; i++) activity[i] *= rescale;\n        var_inc *= rescale;\n    }\n    if (vsids.inHeap(var)) vsids.update(var);\n}",
+      11281
+    ]
+  },
+  "saved_at": 1777424621.6408927
+}

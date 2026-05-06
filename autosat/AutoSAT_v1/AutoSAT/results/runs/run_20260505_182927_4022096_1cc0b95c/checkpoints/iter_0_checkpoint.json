@@ -1,0 +1,44 @@
+{
+  "version": 1,
+  "run_id": "run_20260505_182927_4022096_1cc0b95c",
+  "next_iter": 1,
+  "results": {
+    "time": {
+      "0": 8408,
+      "1": 8757
+    },
+    "prompt": {
+      "0": "",
+      "1": "void Solver::bump_var(int var, double coeff) {\n    // Update activity score\n    activity[var] += var_inc * coeff;\n    // Rescale activity scores and increment to prevent overflow\n    if (activity[var] > 1e100) {\n        for (int i = 1; i <= vars; i++) {\n            activity[i] *= 1e-100;\n        }\n        var_inc *= 1e-100;\n    }\n    // Trigger heap update if variable is present\n    if (vsids.inHeap(var)) {\n        vsids.update(var);\n    }\n}"
+    },
+    "PAR-2": {
+      "0": 8408,
+      "1": 8757
+    },
+    "satisfiable": {
+      "0": 5
+    },
+    "unsatisfiable": {
+      "0": 7
+    },
+    "timeout": {
+      "0": 0
+    }
+  },
+  "answers": {
+    "1": "void Solver::bump_var(int var, double coeff) {\n    // Update activity score\n    activity[var] += var_inc * coeff;\n    // Rescale activity scores and increment to prevent overflow\n    if (activity[var] > 1e100) {\n        for (int i = 1; i <= vars; i++) {\n            activity[i] *= 1e-100;\n        }\n        var_inc *= 1e-100;\n    }\n    // Trigger heap update if variable is present\n    if (vsids.inHeap(var)) {\n        vsids.update(var);\n    }\n}"
+  },
+  "extra_params": {
+    "1": {
+      "lbd_queue_size": "50"
+    }
+  },
+  "best_result": {
+    "1": [
+      8757,
+      "void Solver::bump_var(int var, double coeff) {\n    // Update activity score\n    activity[var] += var_inc * coeff;\n    // Rescale activity scores and increment to prevent overflow\n    if (activity[var] > 1e100) {\n        for (int i = 1; i <= vars; i++) {\n            activity[i] *= 1e-100;\n        }\n        var_inc *= 1e-100;\n    }\n    // Trigger heap update if variable is present\n    if (vsids.inHeap(var)) {\n        vsids.update(var);\n    }\n}",
+      8757
+    ]
+  },
+  "saved_at": 1778000133.1214278
+}

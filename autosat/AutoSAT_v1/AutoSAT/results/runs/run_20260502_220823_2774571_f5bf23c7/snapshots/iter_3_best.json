@@ -1,0 +1,7 @@
+{
+  "iter": 3,
+  "best_id": "4",
+  "time": 13667,
+  "code": "void Solver::rephase() {\n    rephases = 0;\n    threshold *= 0.85;\n    rephase_limit += 8192;\n    if (rand() % 2 == 0) {\n        for (int i = 1; i <= vars; i++) {\n            if (saved[i] != 0) saved[i] = -saved[i];\n        }\n    }\n}",
+  "PAR-2": 18667
+}

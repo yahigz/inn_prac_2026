@@ -1,0 +1,20 @@
+{
+  "time": {
+    "8": 8576
+  },
+  "prompt": {
+    "8": "void Solver::rephase() {\n    rephases = 0;\n    threshold *= 0.95; // Slow decay to avoid aggressive rephasing\n    rephase_limit += 4096; // Smaller increment to rephase more frequently\n    // With 70% probability: use local best phase\n    // With 15% probability: use inverted local best phase\n    // With 10% probability: use random phase\n    // With 5% probability: keep current saved phases\n    int phase_rand = rand() % 100;\n    if ((phase_rand -= 70) < 0) {\n        for (int i = 1; i <= vars; i++) saved[i] = local_best[i];\n    } else if ((phase_rand -= 15) < 0) {\n        for (int i = 1; i <= vars; i++) saved[i] = -local_best[i];\n    } else if ((phase_rand -= 10) < 0) {\n        for (int i = 1; i <= vars; i++) saved[i] = rand() % 2 ? 1 : -1;\n    }\n    // else keep saved phases unchanged\n}"
+  },
+  "PAR-2": {
+    "8": 8576
+  },
+  "satisfiable": {
+    "8": 5
+  },
+  "unsatisfiable": {
+    "8": 7
+  },
+  "timeout": {
+    "8": 0
+  }
+}

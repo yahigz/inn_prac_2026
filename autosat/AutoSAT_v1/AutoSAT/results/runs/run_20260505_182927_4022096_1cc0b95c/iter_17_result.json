@@ -1,0 +1,20 @@
+{
+  "time": {
+    "18": 8795
+  },
+  "prompt": {
+    "18": "else if (lbd_queue_size >= 30 && conflicts > 0 && static_cast<double>(fast_lbd_sum) / lbd_queue_size > 1.5 * static_cast<double>(slow_lbd_sum) / conflicts) restart();"
+  },
+  "PAR-2": {
+    "18": 8795
+  },
+  "satisfiable": {
+    "18": 5
+  },
+  "unsatisfiable": {
+    "18": 7
+  },
+  "timeout": {
+    "18": 0
+  }
+}

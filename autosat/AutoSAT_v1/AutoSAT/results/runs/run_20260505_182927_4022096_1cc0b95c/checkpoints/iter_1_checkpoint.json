@@ -1,0 +1,51 @@
+{
+  "version": 1,
+  "run_id": "run_20260505_182927_4022096_1cc0b95c",
+  "next_iter": 2,
+  "results": {
+    "time": {
+      "0": 8408,
+      "1": 8757,
+      "2": 8495
+    },
+    "prompt": {
+      "0": "",
+      "1": "void Solver::bump_var(int var, double coeff) {\n    // Update activity score\n    activity[var] += var_inc * coeff;\n    // Rescale activity scores and increment to prevent overflow\n    if (activity[var] > 1e100) {\n        for (int i = 1; i <= vars; i++) {\n            activity[i] *= 1e-100;\n        }\n        var_inc *= 1e-100;\n    }\n    // Trigger heap update if variable is present\n    if (vsids.inHeap(var)) {\n        vsids.update(var);\n    }\n}",
+      "2": "else if (lbd_queue_size == 30 && conflicts > 100 && fast_lbd_sum / lbd_queue_size > 1.2 * slow_lbd_sum / conflicts) restart();"
+    },
+    "PAR-2": {
+      "0": 8408,
+      "1": 8757,
+      "2": 8495
+    },
+    "satisfiable": {
+      "0": 5
+    },
+    "unsatisfiable": {
+      "0": 7
+    },
+    "timeout": {
+      "0": 0
+    }
+  },
+  "answers": {
+    "1": "void Solver::bump_var(int var, double coeff) {\n    // Update activity score\n    activity[var] += var_inc * coeff;\n    // Rescale activity scores and increment to prevent overflow\n    if (activity[var] > 1e100) {\n        for (int i = 1; i <= vars; i++) {\n            activity[i] *= 1e-100;\n        }\n        var_inc *= 1e-100;\n    }\n    // Trigger heap update if variable is present\n    if (vsids.inHeap(var)) {\n        vsids.update(var);\n    }\n}",
+    "2": "else if (lbd_queue_size == 30 && conflicts > 100 && fast_lbd_sum / lbd_queue_size > 1.2 * slow_lbd_sum / conflicts) restart();"
+  },
+  "extra_params": {
+    "1": {
+      "lbd_queue_size": "50"
+    },
+    "2": {
+      "lbd_queue_size": "30"
+    }
+  },
+  "best_result": {
+    "2": [
+      8495,
+      "else if (lbd_queue_size == 30 && conflicts > 100 && fast_lbd_sum / lbd_queue_size > 1.2 * slow_lbd_sum / conflicts) restart();",
+      8495
+    ]
+  },
+  "saved_at": 1778002494.5241106
+}

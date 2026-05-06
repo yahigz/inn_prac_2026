@@ -1,0 +1,7 @@
+{
+  "iter": 35,
+  "best_id": "36",
+  "time": 10180,
+  "code": "void Solver::rephase() {\n    rephases = 0;\n    threshold *= 0.85;\n    rephase_limit += 4096;\n    int phase_rand = rand() % 100;\n    if (phase_rand < 60) { // 60% chance: use current trail phases\n        for (int i = 1; i <= vars; i++) {\n            if (value[i] != 0) saved[i] = value[i]; // use current assignment\n            else saved[i] = local_best[i]; // fallback to local best\n        }\n    } else if (phase_rand < 80) { // 20% chance: invert local best\n        for (int i = 1; i <= vars; i++) saved[i] = -local_best[i];\n    } else if (phase_rand < 95) { // 15% chance: random polarity\n        for (int i = 1; i <= vars; i++) saved[i] = rand() % 2 ? 1 : -1;\n    } else { // 5% chance: clear saved phases\n        for (int i = 1; i <= vars; i++) saved[i] = 0;\n    }\n}",
+  "PAR-2": 10180
+}

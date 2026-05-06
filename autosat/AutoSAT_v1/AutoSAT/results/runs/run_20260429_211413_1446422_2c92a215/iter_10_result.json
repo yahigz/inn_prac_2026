@@ -1,0 +1,20 @@
+{
+  "time": {
+    "11": 10477
+  },
+  "prompt": {
+    "11": "void Solver::restart() {\n    fast_lbd_sum = lbd_queue_size = lbd_queue_pos = 0;\n    backtrack(0);\n    int phase_rand = rand() % 100;\n    if ((phase_rand -= 70) < 0) {\n        for (int i = 1; i <= vars; i++) saved[i] = local_best[i];\n    } else if ((phase_rand -= 10) < 0) {\n        for (int i = 1; i <= vars; i++) saved[i] = -local_best[i];\n    } else if ((phase_rand -= 15) < 0) {\n        for (int i = 1; i <= vars; i++) saved[i] = rand() % 2 ? 1 : -1;\n    }\n}"
+  },
+  "PAR-2": {
+    "11": 10477
+  },
+  "satisfiable": {
+    "11": 5
+  },
+  "unsatisfiable": {
+    "11": 7
+  },
+  "timeout": {
+    "11": 0
+  }
+}

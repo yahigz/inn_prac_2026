@@ -1,0 +1,7 @@
+{
+  "iter": 27,
+  "best_id": "28",
+  "time": 6579,
+  "code": "void Solver::rephase() {\n    if (rephases == 0) {\n        // First rephase: reset to local best phases\n        for (int i = 1; i <= vars; i++) \n            saved[i] = local_best[i];\n    } else if (rephases == 1) {\n        // Second rephase: invert local best phases\n        for (int i = 1; i <= vars; i++) \n            saved[i] = -local_best[i];\n    } else {\n        // Subsequent rephases: random phases\n        for (int i = 1; i <= vars; i++) \n            saved[i] = rand() % 2 ? 1 : -1;\n    }\n    \n    rephases++;\n    threshold *= 0.95;  // Slower decay to be less aggressive\n    rephase_limit += 4096;  // Smaller increment for more frequent rephases\n}",
+  "PAR-2": 6579
+}

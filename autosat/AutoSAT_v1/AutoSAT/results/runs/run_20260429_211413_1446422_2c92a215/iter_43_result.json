@@ -1,0 +1,20 @@
+{
+  "time": {
+    "44": 9401
+  },
+  "prompt": {
+    "44": "void Solver::rephase() {\n    rephases = 0;\n    threshold *= 0.85;\n    rephase_limit += 4096;\n    \n    // Perform phase reset based on local_best heuristic\n    for (int i = 1; i <= vars; i++) {\n        if (value[i] != 0) {\n            // Reset saved phases to favor local best assignments\n            saved[i] = local_best[i] != 0 ? local_best[i] : (rand() % 2 ? 1 : -1);\n        }\n    }\n}"
+  },
+  "PAR-2": {
+    "44": 9401
+  },
+  "satisfiable": {
+    "44": 5
+  },
+  "unsatisfiable": {
+    "44": 7
+  },
+  "timeout": {
+    "44": 0
+  }
+}

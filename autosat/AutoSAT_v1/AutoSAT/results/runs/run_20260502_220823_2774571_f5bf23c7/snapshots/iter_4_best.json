@@ -1,0 +1,7 @@
+{
+  "iter": 4,
+  "best_id": "5",
+  "time": 11212,
+  "code": "void Solver::bump_var(int var, double coeff) {\n    double inc = var_inc * coeff;\n    activity[var] += inc;\n    if (activity[var] > 1e100) {\n        for (int i = 1; i <= vars; i++) activity[i] *= 1e-100;\n        var_inc *= 1e-100;\n    }\n    if (vsids.inHeap(var)) vsids.update(var);\n}",
+  "PAR-2": 11212
+}

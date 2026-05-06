@@ -1,0 +1,7 @@
+{
+  "iter": 47,
+  "best_id": "48",
+  "time": 10543,
+  "code": "void Solver::rephase() {\n    // Adaptive rephasing based on solver state\n    if (rephases == 0) {\n        // First rephase: aggressive reset\n        threshold *= 0.7;\n        rephase_limit += 4096;\n    } else {\n        // Subsequent rephases: more conservative\n        threshold *= 0.95;\n        rephase_limit += 2048;\n    }\n    \n    // Update saved phases based on current trail\n    for (int i = 1; i <= vars; i++) {\n        if (value[i] != 0) {\n            // Reinforce current assignment with some randomness\n            saved[i] = (rand() % 100 < 80) ? value[i] : -value[i];\n        } else if (saved[i] == 0) {\n            // Initialize unassigned variables randomly\n            saved[i] = (rand() % 2) ? 1 : -1;\n        }\n    }\n    \n    rephases++;\n}",
+  "PAR-2": 10543
+}

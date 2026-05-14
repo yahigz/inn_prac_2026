@@ -3,3 +3,7 @@
 *.env
 .env
 .env.*
+*/venv/*
+venv
+*.venv*
+*/.venv/*

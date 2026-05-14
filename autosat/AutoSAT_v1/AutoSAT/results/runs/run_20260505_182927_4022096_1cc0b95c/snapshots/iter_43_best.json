@@ -1,0 +1,7 @@
+{
+  "iter": 43,
+  "best_id": "44",
+  "time": 9197,
+  "code": "void Solver::rephase() {\n    int phase_choice = rand() % 100;\n    \n    if (phase_choice < 70) {\n        // 70% chance: Use current variable assignments\n        for (int i = 1; i <= vars; i++) {\n            saved[i] = value[i] == 0 ? saved[i] : value[i];\n        }\n    }\n    else if (phase_choice < 85) {\n        // 15% chance: Use local best phases\n        for (int i = 1; i <= vars; i++) {\n            saved[i] = local_best[i];\n        }\n    }\n    else if (phase_choice < 90) {\n        // 5% chance: Invert local best phases\n        for (int i = 1; i <= vars; i++) {\n            saved[i] = -local_best[i];\n        }\n    }\n    else {\n        // 10% chance: Random phases\n        for (int i = 1; i <= vars; i++) {\n            saved[i] = rand() % 2 ? 1 : -1;\n        }\n    }\n    \n    // Original rephase parameters\n    rephases = 0;\n    threshold *= 0.85;  // Slightly more aggressive threshold reduction\n    rephase_limit += 12288;  // Increase rephase limit more\n}",
+  "PAR-2": 9197
+}

@@ -1,0 +1,7 @@
+{
+  "iter": 47,
+  "best_id": "48",
+  "time": 12531,
+  "code": "void Solver::rephase() {\n    // Reset the rephase counter\n    rephases = 0;\n    \n    // Gradually increase the rephase limit (more aggressive on difficult problems)\n    rephase_limit = rephase_limit * 1.1 + 100;\n    \n    // Adjust threshold based on recent trail performance\n    threshold = (threshold * 0.8) + (trail.size() * 0.2);\n    \n    // Update saved phases based on recent local best assignments\n    // Mix between current trail assignments and local best for diversification\n    for (int i = 1; i <= vars; i++) {\n        if (value[i] != 0) {\n            // Keep current assignment if variable is assigned in trail\n            saved[i] = value[i];\n        } else if (rand() % 100 < 70) {\n            // 70% chance to use local best, 30% to invert for exploration\n            saved[i] = local_best[i];\n        } else {\n            saved[i] = -local_best[i];\n        }\n    }\n    \n    // Reset the trail threshold for tracking new local best assignments\n    if (trail.size() > 0) {\n        threshold = std::max((int)(trail.size() * 0.9), 100);\n    }\n}",
+  "PAR-2": 17531
+}

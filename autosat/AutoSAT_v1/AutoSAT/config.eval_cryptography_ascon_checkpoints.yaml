@@ -1,0 +1,19 @@
+results_save_path: './temp/eval_checkpoint_results/'
+eval_data_dir: '../../datasets/cryptography-ascon/eval'
+eval_parallel_size: 6
+eval_timeout: 5000
+keep_intermediate_results: false
+rand_seed: 42
+
+project: 'EasySAT/'
+baseline_solver_path: './examples/EasySAT/original_EasySAT/EasySAT.cpp'
+llm_model: 'checkpoint_eval'
+task_selection_mode: 'cycle'
+fallback_task: 'rephase_function'
+
+checkpoints:
+  - './results/runs/run_20260505_182927_4022096_1cc0b95c/iter_27_result.json'
+  - './results/runs/run_20260502_220823_2774571_f5bf23c7/iter_58_result.json'
+  - './results/runs/run_20260429_211413_1446422_2c92a215/iter_41_result.json'
+  - './results/runs/run_20260422_204845_2349603_e7050283/iter_36_result.json'
+  - './results/runs/run_20260417_231038_228638_5e00124e/iter_28_result.json'

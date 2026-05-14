@@ -1,0 +1,7 @@
+{
+  "iter": 35,
+  "best_id": "36",
+  "time": 8164,
+  "code": "void Solver::rephase() {\n    rephases = 0;\n    threshold *= 0.85;  // Slightly more aggressive threshold reduction\n    \n    // Adjust rephase_limit based on recent LBD performance\n    if (lbd_queue_size == 50) {\n        double fast_avg = fast_lbd_sum / lbd_queue_size;\n        if (fast_avg > 10.0) {\n            rephase_limit += 16384;  // Increase limit if LBD is high\n        } else {\n            rephase_limit += 4096;   // Smaller increase if LBD is low\n        }\n    } else {\n        rephase_limit += 8192;\n    }\n    \n    // Update saved phases based on activity scores\n    for (int i = 1; i <= vars; i++) {\n        if (value[i] != 0) {\n            // Prefer current assignment for high-activity variables\n            if (activity[i] > 1e-3 && rand() % 100 < 80) {\n                saved[i] = value[i];\n            }\n        } else {\n            // For unassigned variables, use local best if available\n            if (local_best[i] != 0 && rand() % 100 < 70) {\n                saved[i] = local_best[i];\n            } else if (activity[i] > 1e-3 && rand() % 100 < 60) {\n                // High activity variables get random phase\n                saved[i] = (rand() % 2) ? 1 : -1;\n            }\n        }\n    }\n}",
+  "PAR-2": 8164
+}

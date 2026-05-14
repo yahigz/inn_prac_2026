@@ -1,0 +1,24 @@
+Metadata-Version: 2.1
+Name: autosat
+Version: 0.1
+Summary: implementations of automatically optimizing SAT Solvers via LLMs.
+Home-page: https://github.com/YiwenAI/AutoSAT
+Author: Yiwen Sun, Xianyin Zhang, Shiyu Huang
+Author-email: ywsun22@m.fudan.edu.cn
+License: MIT
+Project-URL: Code, https://github.com/YiwenAI/AutoSAT
+Project-URL: Paper, https://arxiv.org/abs/2402.10705
+Keywords: LLMs SAT solvers automatic
+Platform: UNKNOWN
+Classifier: Programming Language :: Python :: 3
+Classifier: Programming Language :: Python :: 3.8
+Classifier: Programming Language :: Python :: 3.9
+Classifier: Programming Language :: Python :: 3.10
+Classifier: Programming Language :: Python :: 3.11
+Requires-Python: >=3.8
+Provides-Extra: docs
+Provides-Extra: tests
+License-File: LICENSE
+
+UNKNOWN
+

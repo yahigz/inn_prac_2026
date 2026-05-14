@@ -1,0 +1,20 @@
+{
+  "time": {
+    "32": 8115
+  },
+  "prompt": {
+    "32": "void Solver::rephase() {\n    rephases = 0;\n    threshold *= 0.8;  // More aggressive reduction\n    rephase_limit += 16384;  // Double the increase\n    \n    // With 30% probability, update saved polarity based on local_best\n    // This helps adapt the heuristic while maintaining stability\n    if (rand() % 10 < 3) {\n        for (int i = 1; i <= vars; i++) {\n            saved[i] = local_best[i];\n        }\n    }\n}"
+  },
+  "PAR-2": {
+    "32": 8115
+  },
+  "satisfiable": {
+    "32": 5
+  },
+  "unsatisfiable": {
+    "32": 7
+  },
+  "timeout": {
+    "32": 0
+  }
+}

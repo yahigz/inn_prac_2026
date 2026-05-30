@@ -1,315 +1,272 @@
-# HOWTO: запуск AutoSAT в этом репозитории
+# AutoSAT HOWTO
 
+This document describes how to run [AutoSAT](autosat/AutoSAT_v1/AutoSAT) after the LLM setup was moved fully to environment variables.
 
-Этот файл описывает рабочий путь запуска с учетом текущих изменений в проекте:
-- запуск на Linux;
-- работа через OpenAI-compatible API (DeepInfra);
-- поддержка нескольких датасетов:
-  - мини-датасет `mini_v2`;
-  - SAT20: `sat20_cnfs`;
-  - Zamkeller;
-  - cryptography-ascon;
-- логирование расхода токенов;
-- checkpoint/resume через конфиг;
-- ретраи при временных ошибках API;
-- запуск в фоне через `nohup`.
-- каждый запуск получает свой `run_id`, поэтому артефакты не перетираются.
+## 1. Principles
 
+- YAML configs in [AutoSAT](autosat/AutoSAT_v1/AutoSAT) define experiment logic, datasets, solver paths, iteration counts, evaluation settings, and write-back strategy.
+- YAML configs must **not** define model API settings.
+- Model provider, endpoint, model name, and credentials are taken only from environment variables read by [_apply_env_overrides()](autosat/AutoSAT_v1/AutoSAT/main.py:800) and resolved in [get_llm_api()](autosat/AutoSAT_v1/AutoSAT/autosat/llm_api/base_api.py:498).
+- Each run stores its source config path and sanitized config payload in [run_metadata.json](autosat/AutoSAT_v1/AutoSAT/main.py:694) under `results/runs/<run_id>/`.
 
-## 1. Что уже подготовлено
+## 2. Installation
 
-- Датасеты распакованы в папку `datasets/`.
-- Поддерживаемые датасеты:
-  - Мини-датасет: `datasets/mini_v2/`
-    - `datasets/mini_v2/train`
-    - `datasets/mini_v2/eval`
-    - Включает 20 самых маленьких инстансов из Zamkeller, которых не было в оригинале.
-  - SAT20: `datasets/sat20_cnfs/`
-    - Оригинальные CNF-файлы SAT20 (используются для крупных тестов и бенчмарков).
-  - Zamkeller: `datasets/Zamkeller/`
-    - `datasets/Zamkeller/train`
-    - `datasets/Zamkeller/eval`
-    - Альтернативный набор для тестирования и расширения.
-  - cryptography-ascon: `datasets/cryptography-ascon/`
-    - `datasets/cryptography-ascon/train`
-    - `datasets/cryptography-ascon/eval`
-    - Используется для экспериментов с криптографическими задачами.
-- Мини-конфиг: `AutoSAT_v1/AutoSAT/config.mini.yaml`
-- Примеры конфигов для SAT20 и других датасетов: `AutoSAT_v1/AutoSAT/config.sat20_combined.train4func.yaml`, `config.sat20_small.train4func.yaml` и др.
-- Git игнорирует тяжелые файлы через `.gitignore`:
-  - `datasets/`
-  - `AutoSAT_v1/AutoSAT/temp/`
-
-## 2. Требования окружения
-
-Рекомендуется использовать виртуальное окружение `../.venv` (оно уже используется в проекте).
-
-Из корня репозитория:
+From [AutoSAT root](autosat/AutoSAT_v1/AutoSAT):
 
 ```bash
-source .venv/bin/activate
-```
-
-Установить/обновить зависимости AutoSAT:
-
-```bash
-cd AutoSAT_v1/AutoSAT
-python -m pip install -r requirements.txt
-python -m pip install -e .
+pip install -e .
 python setup.py develop
 ```
 
-Важно для `ray`:
+Requirements:
+- Python 3.10+
+- `g++` with C++17 support
+- datasets prepared under paths referenced by your YAML configs
 
-```bash
-python -m pip install "setuptools<81"
-```
+## 3. Environment variables
 
-Это нужно из-за `pkg_resources`, который использует текущая версия `ray`.
+### Common variables
 
+Recognized LLM variables:
 
-## 3. Настройка `.env`
+- `AUTOSAT_LLM_MODEL`
+- `AUTOSAT_API_BASE`
+- `AUTOSAT_API_KEY`
+- `AUTOSAT_API_TYPE`
 
-Файл `.env` должен лежать в корне репозитория (`autosat/.env`) и автоматически подхватывается при запуске.
+They are applied in [_apply_env_overrides()](autosat/AutoSAT_v1/AutoSAT/main.py:800).
 
-**Обязательно пропишите свой API-ключ!**
+### 3.1 Eliza
 
-Пример содержимого `.env`:
-
-```env
-# Модель для LLM (обязательно)
-DEEPINFRA_MODEL="openai/gpt-oss-120b"
-# Базовый URL для DeepInfra (обязательно)
-DEEPINFRA_API_BASE="https://api.deepinfra.com/v1/openai"
-# Ваш API-ключ (обязательно!)
-DEEPINFRA_API_KEY="<YOUR_KEY>"
-```
-
-**Важно:**
-- `DEEPINFRA_API_KEY` — сюда нужно вписать ваш персональный ключ доступа к DeepInfra API. Без него ничего не заработает!
-- `DEEPINFRA_API_BASE` должен быть **base URL**, а не полный endpoint.
-  - Неправильно: `.../chat/completions`
-  - Правильно: `https://api.deepinfra.com/v1/openai`
-- Модель должна быть совместима с OpenAI API (например, `openai/gpt-oss-120b`).
-
-Почему так: библиотека OpenAI сама добавляет нужный путь API.
-
-
-## 4. Примеры запуска обучения и оценки
-
-Из папки `AutoSAT_v1/AutoSAT`:
-
-### Мини-датасет (mini_v2)
-```bash
-python3 main.py --config ./config.mini.yaml
-```
-
-### SAT20 (пример)
-```bash
-python3 main.py --config ./config.sat20_combined.train4func.yaml
-```
-
-### Zamkeller (пример)
-```bash
-python3 main.py --config ./config.zamkeller.yaml
-```
-
-### cryptography-ascon (пример)
-```bash
-python3 main.py --config ./config.cryptography_ascon.yaml
-```
-
-#### Пример путей в конфиге для разных датасетов:
-
-```yaml
-data_dir: ../../datasets/sat20_cnfs/
-eval_data_dir: ../../datasets/sat20_cnfs/
-# или
-data_dir: ../../datasets/Zamkeller/train
-eval_data_dir: ../../datasets/Zamkeller/eval
-# или
-data_dir: ../../datasets/cryptography-ascon/train
-eval_data_dir: ../../datasets/cryptography-ascon/eval
-```
-
-Если `run_id` пустой, он генерируется автоматически при старте.
-Если нужно продолжить старый запуск, укажи тот же `run_id` или конкретный `checkpoint_path`.
-
-Чтобы явно продолжить с конкретного состояния, укажи:
-
-```yaml
-checkpoint_path: "./results/checkpoints/iter_12_checkpoint.json"
-```
-
-Если `checkpoint_path` пустой, используется `latest_checkpoint.json` из `checkpoint_dir`.
-
-## 5. Как работает checkpoint/resume
-
-После каждой итерации сохраняются:
-- `results/checkpoints/latest_checkpoint.json`
-- `results/checkpoints/iter_<N>_checkpoint.json`
-- `results/iter_<N>_result.json`
-- `results/snapshots/iter_<N>_best.json`
-
-В чекпоинте лежат:
-- `next_iter` — с какой итерации продолжать;
-- `results` — накопленные метрики;
-- `answers` — ответы модели;
-- `extra_params` — дополнительные параметры;
-- `best_result` — лучший найденный результат.
-
-На старте `main.py`:
-1. читает `resume_from_checkpoint`;
-2. ищет чекпоинт по `checkpoint_path` или в `checkpoint_dir`;
-3. если чекпоинт есть, возобновляет работу с `next_iter`;
-4. если чекпоинта нет, стартует с нуля.
-
-## 6. Как читать вывод
-
-
-### Базовые метрики
-- `Backbone(original) result -- time: X seconds ; PAR-2: Y`
-
-### Метрики кандидатов
-- В конце печатается словарь `final`:
-  - `time`
-  - `PAR-2`
-  - `prompt` (сгенерированный код)
-
-Кандидат считается лучше baseline, если:
-- `PAR-2(candidate) < PAR-2(baseline)`
-
-Именно такие кандидаты идут в дополнительный eval.
-
-### Проверка размера датасетов
-
-```bash
-# mini_v2
-find datasets/mini_v2/train -type f -name '*.cnf' | wc -l
-find datasets/mini_v2/eval -type f -name '*.cnf' | wc -l
-# SAT20
-find datasets/sat20_cnfs/ -type f -name '*.cnf' | wc -l
-# Zamkeller
-find datasets/Zamkeller/train -type f -name '*.cnf' | wc -l
-find datasets/Zamkeller/eval -type f -name '*.cnf' | wc -l
-# cryptography-ascon
-find datasets/cryptography-ascon/train -type f -name '*.cnf' | wc -l
-find datasets/cryptography-ascon/eval -type f -name '*.cnf' | wc -l
-```
-
-### Расход токенов
-В логах есть строки:
-
-```text
-[TokenUsage] model=... call_prompt=... call_completion=... call_total=... cum_total=...
-```
-
-- `call_*` — токены конкретного запроса.
-- `cum_*` — накопительный итог внутри процесса.
-
-Практически: для оценки общего расхода запуска суммируйте `call_total` по всем строкам `TokenUsage` (включая worker-логи Ray).
-
-## 7. Ретраи при падении API
-
-Если API временно падает, запрос повторяется через паузу.
-
-Поддерживаются переменные окружения:
+Use Eliza by setting:
 
 ```env
-AUTOSAT_API_RETRY_SECONDS=10
-AUTOSAT_API_MAX_RETRIES=0
+AUTOSAT_API_TYPE=eliza
+AUTOSAT_API_KEY=<your_soy_oauth_token>
+AUTOSAT_LLM_MODEL=claude-sonnet-4-6
 ```
 
-Значения по умолчанию:
-- `AUTOSAT_API_RETRY_SECONDS=10` — ждать 10 секунд между попытками;
-- `AUTOSAT_API_MAX_RETRIES=0` — безлимитные повторы.
+Notes:
+- `AUTOSAT_API_TYPE=eliza` switches [get_llm_api()](autosat/AutoSAT_v1/AutoSAT/autosat/llm_api/base_api.py:505) to [ElizaCallAPI](autosat/AutoSAT_v1/AutoSAT/autosat/llm_api/base_api.py:282).
+- `AUTOSAT_LLM_MODEL` should be the raw Eliza model name, for example `claude-sonnet-4-6`.
+- `AUTOSAT_API_BASE` is not needed for Eliza.
 
-Если нужно ограничить число попыток, поставь, например:
+### 3.2 OpenAI-compatible providers
+
+Use any OpenAI-compatible endpoint by setting:
 
 ```env
-AUTOSAT_API_MAX_RETRIES=5
+AUTOSAT_LLM_MODEL=openai/gpt-4.1
+AUTOSAT_API_BASE=https://api.openai.com/v1
+AUTOSAT_API_KEY=<your_api_key>
 ```
 
-## 8. Запуск в фоне
+Examples:
+- OpenAI-compatible local proxy
+- DeepInfra-compatible endpoint
+- other OpenAI-compatible vendor endpoints
 
-Для долгого прогона удобно использовать `nohup`:
+Notes:
+- leave `AUTOSAT_API_TYPE` unset
+- if `AUTOSAT_API_BASE` is set, [GPTCallAPI](autosat/AutoSAT_v1/AutoSAT/autosat/llm_api/base_api.py:154) is used
+
+### 3.3 Local built-in aliases
+
+Some legacy aliases are still supported in [get_llm_api()](autosat/AutoSAT_v1/AutoSAT/autosat/llm_api/base_api.py:523):
+- `Qwen`
+- `llama`
+- `deepseek`
+
+These use hardcoded local endpoints from code, not YAML.
+
+## 4. Config files
+
+Configs no longer carry model/API settings. They should contain only run logic.
+
+Examples:
+- training configs in [config.sat20_combined.train4func.yaml](autosat/AutoSAT_v1/AutoSAT/config.sat20_combined.train4func.yaml), [config.train.4func.yaml](autosat/AutoSAT_v1/AutoSAT/config.train.4func.yaml), [config.mini.yaml](autosat/AutoSAT_v1/AutoSAT/config.mini.yaml)
+- eval configs in [config.eval_crypto.yaml](autosat/AutoSAT_v1/AutoSAT/config.eval_crypto.yaml), [config.eval_run_20260417.yaml](autosat/AutoSAT_v1/AutoSAT/config.eval_run_20260417.yaml)
+- example configs in [examples/EasySAT/config.yaml](autosat/AutoSAT_v1/AutoSAT/examples/EasySAT/config.yaml)
+
+Important runtime fields commonly used in configs:
+- `iteration_num`
+- `batch_size`
+- `data_parallel_size`
+- `data_dir`
+- `eval_data_dir`
+- `project`
+- `task` or `optimize_tasks`
+- `task_selection_mode`
+- `timeout`
+- `eval_timeout`
+- `eval_parallel_size`
+- `SAT_solver_file_path`
+- `run_id`
+- `resume_from_checkpoint`
+- `checkpoint_dir`
+- `checkpoint_path`
+- `template_update_strategy`
+- `writeback_to_template`
+
+## 5. Recommended local env files
+
+Keep local env files near [main.py](autosat/AutoSAT_v1/AutoSAT/main.py) or export variables in your shell.
+
+Example Eliza file:
+
+```env
+AUTOSAT_API_TYPE=eliza
+AUTOSAT_API_KEY=<your_soy_oauth_token>
+AUTOSAT_LLM_MODEL=claude-sonnet-4-6
+```
+
+Example OpenAI-compatible file:
+
+```env
+AUTOSAT_LLM_MODEL=openai/gpt-4.1
+AUTOSAT_API_BASE=https://api.openai.com/v1
+AUTOSAT_API_KEY=<your_api_key>
+```
+
+Load them before running:
 
 ```bash
-cd AutoSAT_v1/AutoSAT
-nohup env PYTHONUNBUFFERED=1 /home/bibaboba/inn_prac/inn_prac_2026/.venv/bin/python main.py --config config.mini.yaml > nohup.mini_v2.log 2>&1 &
+export $(grep -v '^#' .env.eliza.local | xargs)
 ```
 
-Смотреть лог:
+or
 
 ```bash
-tail -f nohup.mini_v2.log
+export $(grep -v '^#' .env.openai.local | xargs)
 ```
 
-Остановить прогон:
+## 6. Training runs
+
+Run from [AutoSAT root](autosat/AutoSAT_v1/AutoSAT):
 
 ```bash
-pkill -f 'main.py --config config.mini.yaml'
+python3 main.py --config config.sat20_combined.train4func.yaml
 ```
 
-## 9. Graceful shutdown
-
-Если нажать Ctrl+C во время train/eval:
-- срабатывает `KeyboardInterrupt` handler в `main_MultiAgent.py`;
-- вызывается `ExecutionWorker.shutdown_all()`;
-- останавливаются solver-процессы и Ray.
-
-Это защищает от зависших фоновых процессов после прерывания.
-
-## 10. Где искать артефакты
-
-- Промежуточные и финальные результаты промптов:
-  - `AutoSAT_v1/AutoSAT/temp/prompts/`
-- Результаты eval:
-  - `AutoSAT_v1/AutoSAT/temp/eval_results/`
-- Чекпоинты:
-  - `AutoSAT_v1/AutoSAT/results/checkpoints/`
-- Снимки лучших итераций:
-  - `AutoSAT_v1/AutoSAT/results/snapshots/`
-
-## 11. Типовые проблемы
-
-### `Unsupported llm_model without external API endpoint`
-Причина: пустой `api_base` и модель не попала в локальные ветки.
-
-Проверить:
-- `.env` загружен
-- `DEEPINFRA_API_BASE` заполнен
-- модель задана как `openai/gpt-oss-120b`
-
-### `404 Not Found` от API
-Почти всегда неверный `DEEPINFRA_API_BASE`.
-
-Проверь, что он равен:
-- `https://api.deepinfra.com/v1/openai`
-
-а не:
-- `.../chat/completions`
-
-### Предупреждение про `total_time` в C++
-Это compile warning (`unused variable`), запуск не ломает.
-
-## 12. Полезные команды
-
-Проверить размер мини-сплита:
+Example with Eliza:
 
 ```bash
-find datasets/mini_v2/train -type f -name '*.cnf' | wc -l
-find datasets/mini_v2/eval -type f -name '*.cnf' | wc -l
+export $(grep -v '^#' .env.eliza.local | xargs)
+python3 main.py --config config.eliza.yaml
 ```
 
-
-Запустить eval отдельно:
+Example with OpenAI-compatible API:
 
 ```bash
-cd AutoSAT_v1/AutoSAT
-python evaluate.py --config ./examples/EasySAT/eval_config.yaml
-# или для кастомного датасета/конфига:
-python evaluate.py --config ./config.sat20_combined.train4func.yaml
+export $(grep -v '^#' .env.openai.local | xargs)
+python3 main.py --config config.train.4func.yaml
 ```
 
-(Для отдельного eval проверьте пути к solver/data в конфиге — они должны указывать на нужный датасет и solver.)
+What happens during a run:
+- a run id is created in [_make_run_id()](autosat/AutoSAT_v1/AutoSAT/main.py:612)
+- directories are created by [_run_paths()](autosat/AutoSAT_v1/AutoSAT/main.py:619)
+- run metadata is saved by [_save_run_metadata()](autosat/AutoSAT_v1/AutoSAT/main.py:694)
+- training artifacts are written into `results/runs/<run_id>/`
+
+## 7. Eval from an existing run
+
+Use [config.eval_crypto.yaml](autosat/AutoSAT_v1/AutoSAT/config.eval_crypto.yaml) or another eval config with `eval_only_from_run: true`:
+
+```bash
+python3 main.py --config config.eval_crypto.yaml
+```
+
+This path loads the existing run and evaluates from artifacts already stored in `results/runs/<run_id>/`.
+
+## 8. Sequential eval with write-back replay
+
+Use [tools/eval_sequential_writeback.py](autosat/AutoSAT_v1/AutoSAT/tools/eval_sequential_writeback.py):
+
+```bash
+python3 tools/eval_sequential_writeback.py --config config.eval_eliza_run_20260518.yaml
+```
+
+This config defines:
+- source `run_id`
+- eval dataset
+- baseline solver path
+- candidate selection mode
+- whether template write-back is enabled during replay
+
+It no longer needs model settings in YAML.
+
+## 9. Checkpoint evaluation
+
+Use [tools/eval_iter_checkpoints.py](autosat/AutoSAT_v1/AutoSAT/tools/eval_iter_checkpoints.py):
+
+```bash
+python3 tools/eval_iter_checkpoints.py --config config.eval_cryptography_ascon_checkpoints.yaml
+```
+
+This evaluates a list of checkpoint result files against one eval dataset.
+
+## 10. Smoke test for Eliza connectivity
+
+Use [tools/test_eliza.py](autosat/AutoSAT_v1/AutoSAT/tools/test_eliza.py):
+
+```bash
+export $(grep -v '^#' .env.eliza.local | xargs)
+python3 tools/test_eliza.py
+```
+
+It uses:
+- `AUTOSAT_API_KEY`
+- `AUTOSAT_LLM_MODEL`
+
+## 11. Run outputs
+
+For a run id `run_...`, primary outputs live under:
+
+- `results/runs/<run_id>/final_result.json`
+- `results/runs/<run_id>/iter_<n>_result.json`
+- `results/runs/<run_id>/snapshots/`
+- `results/runs/<run_id>/checkpoints/`
+- `results/runs/<run_id>/eval_results/`
+- `results/runs/<run_id>/run_metadata.json`
+
+The [run_metadata.json](autosat/AutoSAT_v1/AutoSAT/main.py:694) file includes:
+- the launch `run_id`
+- the original `config_path`
+- the sanitized config payload used for the run
+- runtime LLM environment snapshot with secret key redacted
+
+That is the place to check which config launched a stored run.
+
+## 12. What must not be put into YAML anymore
+
+Do not define these fields in config YAML files:
+- `llm_model`
+- `api_base`
+- `api_key`
+- `model_name`
+
+These are runtime LLM settings and must come only from environment variables.
+
+## 13. Troubleshooting
+
+### Unsupported model without endpoint
+
+If [get_llm_api()](autosat/AutoSAT_v1/AutoSAT/autosat/llm_api/base_api.py:498) raises unsupported-model errors:
+- set `AUTOSAT_API_BASE`
+- set `AUTOSAT_API_KEY`
+- set `AUTOSAT_LLM_MODEL`
+- or set `AUTOSAT_API_TYPE=eliza` for Eliza
+
+### Eliza token errors
+
+If [ElizaCallAPI](autosat/AutoSAT_v1/AutoSAT/autosat/llm_api/base_api.py:314) says token is missing:
+- export `AUTOSAT_API_KEY`
+- verify `AUTOSAT_API_TYPE=eliza`
+
+### Wrong config behavior
+
+If a run behaves differently than expected:
+- open `results/runs/<run_id>/run_metadata.json`
+- verify `config_path`
+- verify saved config payload
+- verify runtime env snapshot

@@ -1,0 +1,7 @@
+{
+  "iter": 18,
+  "best_id": "19",
+  "time": 8161,
+  "code": "// start\nvoid Solver::restart() {\n    fast_lbd_sum = lbd_queue_size = lbd_queue_pos = 0;\n    backtrack(0);\n    int phase_rand = rand() % 100;\n    if ((phase_rand -= 50) < 0)      for (int i = 1; i <= vars; i++) saved[i] = local_best[i];\n    else if ((phase_rand -= 10) < 0) for (int i = 1; i <= vars; i++) saved[i] = -local_best[i];\n    else if ((phase_rand -= 15) < 0) for (int i = 1; i <= vars; i++) saved[i] = rand() % 2 ? 1 : -1;\n    else if ((phase_rand -= 15) < 0) for (int i = 1; i <= vars; i++) saved[i] = (i % 2 == 0) ? 1 : -1;\n    else ;\n}\n// end",
+  "PAR-2": 13161
+}

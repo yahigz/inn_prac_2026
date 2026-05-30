@@ -1,0 +1,7 @@
+{
+  "iter": 15,
+  "best_id": "16",
+  "time": 7499,
+  "code": "// start\nvoid Solver::rephase() {\n    rephases = 0;\n    threshold = (int)(threshold * 0.85);\n    rephase_limit += 4096 + (int)(conflicts * 0.001);\n    // Diversify the saved phases based on rephase count\n    int phase_type = (int)(slow_lbd_sum / conflicts) % 4;\n    if (phase_type == 0) {\n        for (int i = 1; i <= vars; i++) saved[i] = local_best[i];\n    } else if (phase_type == 1) {\n        for (int i = 1; i <= vars; i++) saved[i] = -local_best[i];\n    } else if (phase_type == 2) {\n        for (int i = 1; i <= vars; i++) saved[i] = rand() % 2 ? 1 : -1;\n    } else {\n        // Keep current saved phases (phase saving)\n    }\n}\n// end",
+  "PAR-2": 12499
+}

@@ -5,4 +5,3 @@ eval_data_dir: "../datasets/mini/eval"
 eval_parallel_size: 4
 rand_seed: 42
 keep_intermediate_results: False
-model_name: 'your_Solver_Name'

@@ -1,0 +1,20 @@
+{
+  "time": {
+    "8": 3546
+  },
+  "prompt": {
+    "8": "// start\nvoid Solver::rephase() {\n    rephases = 0;\n    // Cycle through different rephasing strategies based on rephase_limit\n    int strategy = (rephase_limit / 8192) % 4;\n    if (strategy == 0) {\n        // Use local best phase (most common - exploit best found assignment)\n        for (int i = 1; i <= vars; i++) saved[i] = local_best[i];\n    } else if (strategy == 1) {\n        // Use inverted local best phase (explore opposite polarity)\n        for (int i = 1; i <= vars; i++) saved[i] = -local_best[i];\n    } else if (strategy == 2) {\n        // Random phase assignment (diversification)\n        for (int i = 1; i <= vars; i++) saved[i] = rand() % 2 ? 1 : -1;\n    } else {\n        // All positive phase (unit propagation friendly)\n        for (int i = 1; i <= vars; i++) saved[i] = 1;\n    }\n    threshold *= 0.9;\n    rephase_limit += 8192;\n}\n// end"
+  },
+  "PAR-2": {
+    "8": 3546
+  },
+  "satisfiable": {
+    "8": 5
+  },
+  "unsatisfiable": {
+    "8": 7
+  },
+  "timeout": {
+    "8": 0
+  }
+}

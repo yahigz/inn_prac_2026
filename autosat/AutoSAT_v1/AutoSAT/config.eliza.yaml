@@ -1,0 +1,65 @@
+# AutoSAT config for Eliza API (internal Yandex LLM gateway)
+#
+# Prerequisites:
+#   1. Set environment in .env:
+#        AUTOSAT_API_TYPE=eliza
+#        AUTOSAT_API_KEY=<your_soy_oauth_token>
+#        AUTOSAT_LLM_MODEL=claude-sonnet-4-6
+#   2. Run:
+#        python3 main.py --config config.eliza.yaml
+#
+# Available Eliza/Anthropic models (from GET /anthropic/v1/models):
+#   claude-sonnet-4-6          fast, recommended, supports tool_use
+#   claude-opus-4-7            most powerful, slower
+#   claude-haiku-4-5-20251001  fastest, cheapest
+#   claude-opus-4-6
+#   claude-sonnet-4-5-20250929
+
+# ── LLM ──────────────────────────────────────────────────────────────────────
+# LLM selection is taken only from AUTOSAT_* environment variables.
+
+# ── Training loop ─────────────────────────────────────────────────────────────
+iteration_num: 20
+batch_size: 1
+data_parallel_size: 7          # set higher if you have more quota / parallelism
+
+# ── Tasks to optimize ─────────────────────────────────────────────────────────
+optimize_tasks:
+  - "bump_var_function"
+  - "restart_condition"
+  - "restart_function"
+  - "rephase_function"
+task_selection_mode: "cycle"
+
+# ── Dataset ───────────────────────────────────────────────────────────────────
+data_dir: "../../datasets/cryptography-ascon/train"
+project: "EasySAT/"
+
+# ── SAT solver baseline ───────────────────────────────────────────────────────
+SAT_solver_file_path: './examples/EasySAT/original_EasySAT/EasySAT.cpp'
+timeout: 5000
+
+# ── Evaluation ────────────────────────────────────────────────────────────────
+eval_baseline: true              # run baseline eval at start and save to run dir
+eval_timeout: 5000
+eval_data_dir: "../../datasets/cryptography-ascon/eval"
+eval_parallel_size: 7
+results_save_path: './temp/eval_results/'
+
+# ── Template update strategy ──────────────────────────────────────────────────
+# Controls whether/how EasySAT.cpp templates are updated during training.
+#   "none"         – no write-back (default, original behaviour)
+#   "greedy_train" – write back whenever training PAR-2 strictly improves for
+#                    that task; the LLM will see the improved code as the new
+#                    starting point on the next iteration for that task.
+template_update_strategy: "annealing"
+writeback_to_template: false
+
+# ── Misc ──────────────────────────────────────────────────────────────────────
+temperature: 1.0
+original: true
+original_result: {'time': 0, 'PAR-2': 1}
+devoid_duplication: false
+rand_seed: 42
+keep_intermediate_results: false
+run_id: ""                       # leave empty to auto-generate

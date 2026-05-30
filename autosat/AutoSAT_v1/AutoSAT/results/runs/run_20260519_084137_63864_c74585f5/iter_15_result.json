@@ -1,0 +1,20 @@
+{
+  "time": {
+    "16": 3676
+  },
+  "prompt": {
+    "16": "// start\nvoid Solver::rephase() {\n    rephases = 0;\n    threshold *= 0.85;\n    rephase_limit += 4096;\n    // Aggressively update saved phases to local_best to guide search\n    for (int i = 1; i <= vars; i++) {\n        if (local_best[i] != 0)\n            saved[i] = local_best[i];\n    }\n}\n// end"
+  },
+  "PAR-2": {
+    "16": 3676
+  },
+  "satisfiable": {
+    "16": 5
+  },
+  "unsatisfiable": {
+    "16": 7
+  },
+  "timeout": {
+    "16": 0
+  }
+}

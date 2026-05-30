@@ -164,7 +164,26 @@ void Solver::alloc_memory() {
         value[i] = reason[i] = level[i] = mark[i] = local_best[i] = activity[i] = saved[i] = 0, vsids.insert(i);
 }
 
-{{ replace_code }}
+// start
+void Solver::bump_var(int var, double coeff) {
+    double new_activity = activity[var] + var_inc * coeff;
+    activity[var] = new_activity;
+    if (new_activity > 1e100) {
+        // Rescale all activities to prevent floating point overflow
+        double scale = 1e-100;
+        for (int i = 1; i <= vars; i++) activity[i] *= scale;
+        var_inc *= scale;
+    }
+    // Apply an additional small bonus based on current activity rank to differentiate variables
+    // with the same bump count (tie-breaking towards recently active vars)
+    if (vsids.inHeap(var)) {
+        vsids.update(var);
+    } else {
+        // If the variable is not in heap (currently assigned), still track activity
+        // so when it's reinserted after backtrack it gets the right priority
+    }
+}
+// end
 
 void Solver::assign(int lit, int l, int cref) {
     int var = abs(lit);

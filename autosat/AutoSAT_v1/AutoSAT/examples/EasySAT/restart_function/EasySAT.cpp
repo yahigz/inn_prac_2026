@@ -258,7 +258,17 @@ int Solver::decide() {
 }
 
 
-{{ replace_code }}
+// start
+void Solver::restart() {
+    fast_lbd_sum = lbd_queue_size = lbd_queue_pos = 0;
+    backtrack(0);
+    int phase_rand = rand() % 100;
+    if ((phase_rand -= 50) < 0)      for (int i = 1; i <= vars; i++) saved[i] = local_best[i];
+    else if ((phase_rand -= 10) < 0) for (int i = 1; i <= vars; i++) saved[i] = -local_best[i];
+    else if ((phase_rand -= 25) < 0) for (int i = 1; i <= vars; i++) saved[i] = rand() % 2 ? 1 : -1;
+    else ;
+}
+// end
 
 
 void Solver::rephase() {

@@ -7,3 +7,6 @@
 venv
 *.venv*
 */.venv/*
+LOCAL_LLM_USAGE.md
+.env.eliza.local
+.env.openai.local

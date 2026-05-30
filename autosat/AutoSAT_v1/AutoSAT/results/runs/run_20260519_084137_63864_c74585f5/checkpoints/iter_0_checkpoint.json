@@ -1,0 +1,44 @@
+{
+  "version": 1,
+  "run_id": "run_20260519_084137_63864_c74585f5",
+  "next_iter": 1,
+  "results": {
+    "time": {
+      "0": 3996,
+      "1": 2677
+    },
+    "prompt": {
+      "0": "",
+      "1": "// start\nvoid Solver::bump_var(int var, double coeff) {\n    double new_activity = activity[var] + var_inc * coeff;\n    activity[var] = new_activity;\n    if (new_activity > 1e100) {\n        // Rescale all activities to prevent floating point overflow\n        double scale = 1e-100;\n        for (int i = 1; i <= vars; i++) activity[i] *= scale;\n        var_inc *= scale;\n    }\n    // Apply an additional small bonus based on current activity rank to differentiate variables\n    // with the same bump count (tie-breaking towards recently active vars)\n    if (vsids.inHeap(var)) {\n        vsids.update(var);\n    } else {\n        // If the variable is not in heap (currently assigned), still track activity\n        // so when it's reinserted after backtrack it gets the right priority\n    }\n}\n// end"
+    },
+    "PAR-2": {
+      "0": 3996,
+      "1": 2677
+    },
+    "satisfiable": {
+      "0": 5
+    },
+    "unsatisfiable": {
+      "0": 7
+    },
+    "timeout": {
+      "0": 0
+    }
+  },
+  "answers": {
+    "1": "// start\nvoid Solver::bump_var(int var, double coeff) {\n    double new_activity = activity[var] + var_inc * coeff;\n    activity[var] = new_activity;\n    if (new_activity > 1e100) {\n        // Rescale all activities to prevent floating point overflow\n        double scale = 1e-100;\n        for (int i = 1; i <= vars; i++) activity[i] *= scale;\n        var_inc *= scale;\n    }\n    // Apply an additional small bonus based on current activity rank to differentiate variables\n    // with the same bump count (tie-breaking towards recently active vars)\n    if (vsids.inHeap(var)) {\n        vsids.update(var);\n    } else {\n        // If the variable is not in heap (currently assigned), still track activity\n        // so when it's reinserted after backtrack it gets the right priority\n    }\n}\n// end"
+  },
+  "extra_params": {
+    "1": {
+      "lbd_queue_size": "50"
+    }
+  },
+  "best_result": {
+    "1": [
+      2677,
+      "// start\nvoid Solver::bump_var(int var, double coeff) {\n    double new_activity = activity[var] + var_inc * coeff;\n    activity[var] = new_activity;\n    if (new_activity > 1e100) {\n        // Rescale all activities to prevent floating point overflow\n        double scale = 1e-100;\n        for (int i = 1; i <= vars; i++) activity[i] *= scale;\n        var_inc *= scale;\n    }\n    // Apply an additional small bonus based on current activity rank to differentiate variables\n    // with the same bump count (tie-breaking towards recently active vars)\n    if (vsids.inHeap(var)) {\n        vsids.update(var);\n    } else {\n        // If the variable is not in heap (currently assigned), still track activity\n        // so when it's reinserted after backtrack it gets the right priority\n    }\n}\n// end",
+      2677
+    ]
+  },
+  "saved_at": 1779170845.8008142
+}

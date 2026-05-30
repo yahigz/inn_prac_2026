@@ -1,0 +1,20 @@
+{
+  "time": {
+    "1": 2542
+  },
+  "prompt": {
+    "1": "// start\nvoid Solver::bump_var(int var, double coeff) {\n    double new_act = activity[var] + var_inc * coeff;\n    activity[var] = new_act;\n    if (new_act > 1e100) {\n        // Rescale all activities to prevent floating point overflow\n        double scale = 1e-100;\n        for (int i = 1; i <= vars; i++) activity[i] *= scale;\n        var_inc *= scale;\n        activity[var] = new_act * scale;\n    }\n    // Apply an extra small bump based on current decision level proximity\n    // to give a slight preference to recently active variables\n    if (level[var] > 0) {\n        activity[var] += var_inc * coeff * 0.1;\n        if (activity[var] > 1e100) {\n            double scale = 1e-100;\n            for (int i = 1; i <= vars; i++) activity[i] *= scale;\n            var_inc *= scale;\n        }\n    }\n    if (vsids.inHeap(var)) vsids.update(var);   // update heap position\n}\n// end"
+  },
+  "PAR-2": {
+    "1": 2542
+  },
+  "satisfiable": {
+    "1": 5
+  },
+  "unsatisfiable": {
+    "1": 7
+  },
+  "timeout": {
+    "1": 0
+  }
+}

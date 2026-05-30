@@ -3,7 +3,6 @@ iteration_num: 0
 batch_size: 1
 data_parallel_size: 1
 devoid_duplication: false
-llm_model: "openai/gpt-oss-120b"
 timeout: 5000
 data_dir: ""
 project: ""
@@ -15,9 +14,6 @@ resume_from_checkpoint: false
 checkpoint_dir: "./results/checkpoints"
 checkpoint_path: ""
 
-api_base: "https://api.deepinfra.com/v1/openai"
-api_key: ""
-
 # Путь к SAT_solver_file_path из нужного run (eval будет брать этот файл)
 SAT_solver_file_path: './results/runs/run_20260417_231038_228638_5e00124e/eval_results/tmp_d04_20_h23m50/SAT_Solver_tmp.cpp'
 eval_timeout: 5000
@@ -26,4 +22,3 @@ eval_data_dir: "../../datasets/cryptography-ascon/eval"
 eval_parallel_size: 6
 rand_seed: 42
 keep_intermediate_results: False
-model_name: 'openai/gpt-oss-120b'

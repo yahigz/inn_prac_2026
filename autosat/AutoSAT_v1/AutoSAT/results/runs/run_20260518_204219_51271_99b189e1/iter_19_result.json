@@ -1,0 +1,20 @@
+{
+  "time": {
+    "20": 3534
+  },
+  "prompt": {
+    "20": "// start\nvoid Solver::rephase() {\n    rephases = 0;\n    threshold *= 0.85;\n    rephase_limit += 4096;\n}\n// end"
+  },
+  "PAR-2": {
+    "20": 3534
+  },
+  "satisfiable": {
+    "20": 5
+  },
+  "unsatisfiable": {
+    "20": 7
+  },
+  "timeout": {
+    "20": 0
+  }
+}

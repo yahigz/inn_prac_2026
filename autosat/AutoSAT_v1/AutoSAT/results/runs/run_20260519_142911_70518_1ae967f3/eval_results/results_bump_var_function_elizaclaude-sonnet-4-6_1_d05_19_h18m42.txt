@@ -1,0 +1,13 @@
+cnf File 	 Duration 	 Situation 
+../../datasets/cryptography-ascon/eval/asconhashv12_opt64_H10_M2-pH7B6T6Vub_m6_7.c.cnf	207	satisfiable
+../../datasets/cryptography-ascon/eval/asconhashv12_opt64_H7_M2-OrF8zEw_m2_4.c.cnf	104	satisfiable
+../../datasets/cryptography-ascon/eval/asconhashv12_opt64_H13_M2-axxJh7DAq767y_m4_5.c.cnf	242	satisfiable
+../../datasets/cryptography-ascon/eval/asconhashv12_opt64_H13_M2-axxJh7DAq767y_m4_5.c.cnf	237	satisfiable
+../../datasets/cryptography-ascon/eval/asconhashv12_opt64_H8_M2-bL4cM6NJ_m4_5_U14.c.cnf	377	unsatisfiable
+../../datasets/cryptography-ascon/eval/asconhashv12_opt64_H4_M2-ldRf_m1_2_U21.c.cnf	178	unsatisfiable
+../../datasets/cryptography-ascon/eval/asconhashv12_opt64_H6_M2-4XKSMr_m1_3_U25.c.cnf	178	unsatisfiable
+../../datasets/cryptography-ascon/eval/asconhashv12_opt64_H12_M2-CxLJidFX21oI_m3_6_U2.c.cnf	458	unsatisfiable
+../../datasets/cryptography-ascon/eval/asconhashv12_opt64_H12_M2-CxLJidFX21oI_m3_6_U2.c.cnf	445	unsatisfiable
+../../datasets/cryptography-ascon/eval/asconhashv12_opt64_H10_M2-pH7B6T6Vub_m6_7.c.cnf	211	satisfiable
+../../datasets/cryptography-ascon/eval/asconhashv12_opt64_H7_M2-gHvzZOd_m3_4_U11.c.cnf	175	unsatisfiable
+{'PAR-2': 255.64, 'satisfiable': 5, 'unsatisfiable': 6, 'timeout': 0, 'total time': 2812, '#question': 11}

@@ -23,5 +23,4 @@ AutoSAT_v1/AutoSAT/*.nohup.log
 
 # В .gitignore
 autosat/autosat_project_2026.tar.gz
-
-
+autosat/AutoSAT_v1/AutoSAT/tools/test_eliza.py

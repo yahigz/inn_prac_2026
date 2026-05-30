@@ -1,0 +1,7 @@
+{
+  "iter": 7,
+  "best_id": "8",
+  "time": 2989,
+  "code": "// start\nvoid Solver::rephase() {\n    rephases = 0;\n    // More aggressive threshold reduction to trigger local_best updates more frequently\n    threshold *= 0.85;\n    // Adaptive rephase_limit increase: use a larger step to allow more conflicts between rephases\n    rephase_limit += 4096;\n    // Additionally, inject some randomness into the saved phases to escape local optima\n    int phase_rand = rand() % 100;\n    if ((phase_rand -= 40) < 0) {\n        // Use local_best phase (positive)\n        for (int i = 1; i <= vars; i++) saved[i] = local_best[i];\n    } else if ((phase_rand -= 15) < 0) {\n        // Use inverted local_best phase\n        for (int i = 1; i <= vars; i++) saved[i] = -local_best[i];\n    } else if ((phase_rand -= 20) < 0) {\n        // Random phase assignment\n        for (int i = 1; i <= vars; i++) saved[i] = rand() % 2 ? 1 : -1;\n    } else if ((phase_rand -= 10) < 0) {\n        // All positive phase\n        for (int i = 1; i <= vars; i++) saved[i] = 1;\n    } else if ((phase_rand -= 10) < 0) {\n        // All negative phase\n        for (int i = 1; i <= vars; i++) saved[i] = -1;\n    }\n    // else: keep current saved phases (phase saving from backtrack)\n}\n// end",
+  "PAR-2": 2989
+}

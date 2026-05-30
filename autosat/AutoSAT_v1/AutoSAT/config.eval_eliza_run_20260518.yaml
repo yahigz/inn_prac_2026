@@ -1,0 +1,68 @@
+# Eval-only config for run: run_20260518_204219_51271_99b189e1
+#
+# Runs the sequential greedy eval strategy via:
+#   python3 tools/eval_sequential_writeback.py --config config.eval_eliza_run_20260518.yaml
+#
+# Strategy options (controlled by eval_candidate_mode below):
+#   - all:
+#       Evaluate all training-better-than-baseline candidates independently.
+#   - best_per_task:
+#       Evaluate only the best training candidate for each function/task.
+#   - replay_writeback:
+#       Reproduce the training-time "save good functions" logic on eval by
+#       processing candidates in chronological order and keeping per-task eval
+#       bests as the current template state.
+#
+# Optional final step (eval_final_composition: true):
+#   After candidate selection / replay, build the final set consisting of the
+#   selected best function per task and evaluate that final composition.
+
+# ── Source run ────────────────────────────────────────────────────────────────
+run_id: "run_20260519_142911_70518_1ae967f3"
+
+# ── LLM ──────────────────────────────────────────────────────────────────────
+# LLM selection is taken only from AUTOSAT_* environment variables.
+
+# ── Tasks (must match the original training run) ──────────────────────────────
+project: "EasySAT/"
+optimize_tasks:
+  - "bump_var_function"
+  - "restart_condition"
+  - "restart_function"
+  - "rephase_function"
+task_selection_mode: "cycle"
+
+# ── Training dataset (used only to read training baseline PAR-2) ──────────────
+data_dir: "../../datasets/cryptography-ascon/train"
+
+# ── Evaluation dataset ────────────────────────────────────────────────────────
+eval_data_dir: "../../datasets/cryptography-ascon/eval"
+eval_parallel_size: 7
+eval_timeout: 5000
+
+# ── Baseline solver (original unmodified EasySAT) ─────────────────────────────
+SAT_solver_file_path: './examples/EasySAT/original_EasySAT/EasySAT.cpp'
+timeout: 5000
+
+# ── Eval results output ───────────────────────────────────────────────────────
+# Eval result .txt files are written here.
+results_save_path: './temp/eval_results_sequential/'
+
+# ── Eval selection / composition options ──────────────────────────────────────
+# all            -> evaluate every candidate that beats train baseline
+# best_per_task  -> evaluate only the best train candidate per task
+# replay_writeback -> replay chronological accept/keep logic per task on eval
+#                     (closest to "what code was current during training")
+eval_candidate_mode: "best_per_task"
+# After candidate selection/replay, also evaluate ONE final composite solver made of
+# the selected best function for each task, all applied together.
+eval_final_composition: true
+# When true, accepted eval candidates are written into ./examples/EasySAT/<task>/EasySAT.cpp
+# (mostly useful with replay_writeback). Default false = measure only.
+writeback_to_template: false
+
+# ── Misc ──────────────────────────────────────────────────────────────────────
+original: true
+original_result: {'time': 0, 'PAR-2': 1}
+rand_seed: 42
+keep_intermediate_results: false

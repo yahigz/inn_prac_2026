@@ -1,0 +1,20 @@
+{
+  "time": {
+    "1": 6203
+  },
+  "prompt": {
+    "1": "// start\nvoid Solver::bump_var(int var, double coeff) {\n    double new_act = activity[var] + var_inc * coeff;\n    activity[var] = new_act;\n    if (new_act > 1e100) {\n        // Rescale all activities to prevent floating point overflow\n        for (int i = 1; i <= vars; i++) activity[i] *= 1e-100;\n        var_inc *= 1e-100;\n    }\n    // Apply a small bonus based on current level to favor recently active vars\n    if (level[var] > 0) {\n        activity[var] += var_inc * coeff * 0.1 * (level[var] > 10 ? 10 : level[var]) / 10.0;\n        if (activity[var] > 1e100) {\n            for (int i = 1; i <= vars; i++) activity[i] *= 1e-100;\n            var_inc *= 1e-100;\n        }\n    }\n    if (vsids.inHeap(var)) vsids.update(var);\n}\n// end"
+  },
+  "PAR-2": {
+    "1": 6203
+  },
+  "satisfiable": {
+    "1": 5
+  },
+  "unsatisfiable": {
+    "1": 8
+  },
+  "timeout": {
+    "1": 0
+  }
+}

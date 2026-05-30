@@ -1,0 +1,20 @@
+{
+  "time": {
+    "17": 5178
+  },
+  "prompt": {
+    "17": "// start\nvoid Solver::bump_var(int var, double coeff) {\n    // Use a non-linear bump: scale coeff by a factor based on current activity\n    // to give extra boost to recently conflicting variables\n    double boost = coeff * (1.0 + 0.1 * (activity[var] / (var_inc + 1e-300)));\n    if (boost > 2.0) boost = 2.0; // cap the boost to avoid runaway scores\n    if ((activity[var] += var_inc * boost) > 1e100) {\n        for (int i = 1; i <= vars; i++) activity[i] *= 1e-100;\n        var_inc *= 1e-100;\n    }\n    if (vsids.inHeap(var)) vsids.update(var);\n}\n// end"
+  },
+  "PAR-2": {
+    "17": 5178
+  },
+  "satisfiable": {
+    "17": 5
+  },
+  "unsatisfiable": {
+    "17": 8
+  },
+  "timeout": {
+    "17": 0
+  }
+}

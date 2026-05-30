@@ -7,6 +7,20 @@ The experiment results of original code:
 Experiment 0, original provided judgement condition of restart function is: '''else if (lbd_queue_size == 50 && 0.8 * fast_lbd_sum / lbd_queue_size > slow_lbd_sum / conflicts) restart();''' execution time is {{ original_time }} seconds.
 ###
 
+{% if training_history is defined and training_history %}
+Training history (PAR-2 per iteration, no code):
+{{ training_history }}
+{% endif %}
+{% if current_iteration is defined and total_iterations is defined %}
+Training progress: iteration {{ current_iteration }} of {{ total_iterations }} total.
+{% endif %}
+{% if current_template_code is defined and current_template_code %}
+The current restart condition in the template (starting point for this iteration; may have been updated from a previous improvement):
+'''
+{{ current_template_code }}
+'''
+{% endif %}
+
 Experiment results are:
 ###
 {{ replace_code }}

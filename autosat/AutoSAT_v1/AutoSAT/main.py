@@ -1,11 +1,11 @@
 import os
 import argparse
+import ast
 import json
 import time
 import uuid
 import random
 import yaml
-import ray
 import re
 import sys
 import glob
@@ -15,9 +15,10 @@ from pathlib import Path
 
 from autosat.utils import get_code, revise_file, clean_files, collect_results, \
                             copy_folder, fill_core_codes, delete_InfiniteLoopInst, get_batch_id, train_init, check_reIteration
-from autosat.llm_api.base_api import get_llm_api
+from autosat.llm_api.base_api import get_llm_api, _parse_structured_response
 from autosat.execution.execution_worker import ExecutionWorker
 from autosat.evaluation.evaluate import evaluate
+from autosat.plotting import plot_training_curve
 import warnings
 
 
@@ -38,18 +39,13 @@ def _graceful_shutdown(reason="", exit_code=None):
     except Exception:
         pass
     try:
-        ray.shutdown()
-    except Exception:
-        pass
-    try:
         if os.name == 'posix':
             import subprocess
-            patterns = ['EasySAT', 'SAT_Solver_tmp', 'raylet', 'gcs_server', 'plasma_store', 'ray::']
+            patterns = ['EasySAT', 'SAT_Solver_tmp']
             for pattern in patterns:
                 subprocess.run(['pkill', '-TERM', '-f', pattern], check=False, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True, timeout=2)
             for pattern in patterns:
                 subprocess.run(['pkill', '-KILL', '-f', pattern], check=False, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True, timeout=2)
-            subprocess.run(['ray', 'stop', '--force'], check=False, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True, timeout=5)
     except Exception:
         pass
     finally:
@@ -212,6 +208,203 @@ def _collect_eval_candidates(final, extra_params, baseline):
     return record_info
 
 
+
+def _collect_eval_candidates_chronological(final, extra_params, baseline):
+    record_info = []
+    for global_id_str, item in final.items():
+        if global_id_str == "0":
+            continue
+        par_2 = item.get("PAR-2")
+        answer_code = item.get("prompt", "")
+        if par_2 is None or par_2 >= baseline:
+            continue
+        record_info.append((
+            int(global_id_str),
+            par_2,
+            answer_code,
+            extra_params.get(str(global_id_str), {}),
+        ))
+    record_info.sort(key=lambda x: x[0])
+    return record_info
+
+
+
+def _select_eval_candidates(record_info, mode, fallback_task):
+    mode = str(mode or "all").strip().lower()
+    if mode == "all":
+        return record_info
+    if mode == "best_per_task":
+        best_by_task = {}
+        for global_id, par_2, answer_code, params_dict in record_info:
+            task_name = _infer_task_from_code(answer_code) or fallback_task
+            if not task_name:
+                continue
+            prev = best_by_task.get(task_name)
+            if prev is None or par_2 < prev[1]:
+                best_by_task[task_name] = (global_id, par_2, answer_code, params_dict)
+        selected = list(best_by_task.values())
+        selected.sort(key=lambda x: x[1])
+        return selected
+    if mode == "replay_writeback":
+        return _collect_eval_candidates_chronological(
+            {str(gid): {"PAR-2": par2, "prompt": code} for gid, par2, code, _ in record_info},
+            {str(gid): params for gid, _, _, params in record_info},
+            float("inf")
+        )
+    raise ValueError("eval_candidate_mode must be one of: all, best_per_task, replay_writeback")
+
+
+
+def _latest_result_file(results_dir, method_name):
+    matches = sorted(glob.glob(os.path.join(results_dir, f"results_{method_name}_*.txt")))
+    return matches[-1] if matches else None
+
+
+
+def _read_eval_par2(result_file):
+    last_line = ""
+    with open(result_file, "r", encoding="utf-8") as f:
+        for line in f:
+            stripped = line.strip()
+            if stripped:
+                last_line = stripped
+    if not last_line:
+        raise ValueError(f"Empty eval result file: {result_file}")
+    payload = ast.literal_eval(last_line)
+    if "PAR-2" not in payload:
+        raise KeyError(f"PAR-2 key missing in {result_file}: {payload}")
+    return float(payload["PAR-2"])
+
+
+
+def _evaluate_candidate(args, task_name, method_name, answer_code, params_dict):
+    project_dir = os.path.join(args.project, task_name)
+    source_template = os.path.join("./examples/", project_dir, "EasySAT.cpp")
+    if not os.path.exists(source_template):
+        raise FileNotFoundError(f"task template not found for {task_name} ({source_template})")
+    SAT_folder = os.path.join(args.temp_root, f'EasySAT_{method_name}')
+    copy_folder(src_folder=args.temp_easy_root, num=1, mode='eval', target_folder=SAT_folder)
+    SAT_solver_file_path = os.path.join(SAT_folder, 'EasySAT_modified.cpp')
+    fill_core_codes(
+        origin_file=source_template,
+        target_file=SAT_solver_file_path,
+        answer_code=answer_code,
+        timeout=args.eval_timeout,
+        data_dir="\"{}\"".format(args.eval_data_dir),
+        **params_dict,
+    )
+    ok, compile_error = _validate_filled_solver(SAT_solver_file_path, method_name)
+    if not ok:
+        raise RuntimeError(compile_error)
+    prev_task = getattr(args, "task", "")
+    try:
+        args.task = task_name
+        evaluate(args, method_name=method_name, SAT_solver_file_path=SAT_solver_file_path)
+    finally:
+        args.task = prev_task
+    result_file = _latest_result_file(args.results_save_path, method_name)
+    if not result_file:
+        raise FileNotFoundError(f"No eval result file found for {method_name}")
+    return _read_eval_par2(result_file), SAT_solver_file_path
+
+
+
+def _evaluate_final_composition(args, selected_codes_by_task, tag="final_composition"):
+    if not selected_codes_by_task:
+        return {}
+
+    original_solver = os.path.join("./examples/", args.project.strip("/"), "original_EasySAT", "EasySAT.cpp")
+    if not os.path.exists(original_solver):
+        raise FileNotFoundError(f"Original solver template not found: {original_solver}")
+
+    composite_dir = os.path.join(args.temp_root, f"EasySAT_{tag}")
+    os.makedirs(composite_dir, exist_ok=True)
+    composite_cpp = os.path.join(composite_dir, "EasySAT_modified.cpp")
+
+    # Copy headers required by the solver source so standalone compile/eval works
+    original_solver_dir = os.path.join("./examples/", args.project.strip("/"), "original_EasySAT")
+    for hdr in ("EasySAT.hpp", "heap.hpp"):
+        src_hdr = os.path.join(original_solver_dir, hdr)
+        dst_hdr = os.path.join(composite_dir, hdr)
+        if os.path.exists(src_hdr):
+            import shutil as _shutil
+            _shutil.copy(src_hdr, dst_hdr)
+
+    # First render base solver to resolve Jinja placeholders like {{ timeout }} / {{ data_dir }}
+    rendered_base_cpp = os.path.join(composite_dir, "EasySAT_base_rendered.cpp")
+    revise_file(
+        file_name=original_solver,
+        save_dir=rendered_base_cpp,
+        timeout=args.eval_timeout,
+        data_dir="\"{}\"".format(args.eval_data_dir),
+    )
+    with open(rendered_base_cpp, "r", encoding="utf-8") as f:
+        composite_content = f.read()
+
+    def _strip_markers(code_text):
+        text = str(code_text or "").strip()
+        m = re.search(r"// start\n([\s\S]*?)\n// end", text, re.MULTILINE)
+        return m.group(1).strip() if m else text
+
+    for task_name, payload in sorted(selected_codes_by_task.items()):
+        code = _strip_markers(payload.get("code", ""))
+        if not code:
+            continue
+        if task_name == "bump_var_function":
+            pattern = re.compile(r"void\s+Solver::bump_var\s*\([^)]*\)\s*\{[\s\S]*?\n\}", re.MULTILINE)
+            composite_content, replaced = pattern.subn(code, composite_content, count=1)
+            if replaced == 0:
+                raise ValueError("Could not replace bump_var function in final composition")
+        elif task_name == "restart_function":
+            pattern = re.compile(r"void\s+Solver::restart\s*\([^)]*\)\s*\{[\s\S]*?\n\}", re.MULTILINE)
+            composite_content, replaced = pattern.subn(code, composite_content, count=1)
+            if replaced == 0:
+                raise ValueError("Could not replace restart function in final composition")
+        elif task_name == "rephase_function":
+            pattern = re.compile(r"void\s+Solver::rephase\s*\([^)]*\)\s*\{[\s\S]*?\n\}", re.MULTILINE)
+            composite_content, replaced = pattern.subn(code, composite_content, count=1)
+            if replaced == 0:
+                raise ValueError("Could not replace rephase function in final composition")
+        elif task_name == "restart_condition":
+            pattern = re.compile(r"else if \(lbd_queue_size == 50[\s\S]*?restart\(\);")
+            composite_content, replaced = pattern.subn(code, composite_content, count=1)
+            if replaced == 0:
+                raise ValueError("Could not replace restart condition in final composition")
+        else:
+            raise ValueError(f"Unsupported task for final composition: {task_name}")
+
+    with open(composite_cpp, "w", encoding="utf-8") as f:
+        f.write(composite_content)
+
+    ok, compile_error = _validate_filled_solver(composite_cpp, tag)
+    if not ok:
+        raise RuntimeError(f"Final composition compile failed: {compile_error}")
+
+    method_name = f"{tag}_{args.llm_model}".replace('/', '')
+    prev_task = getattr(args, "task", "")
+    try:
+        args.task = "whole_algorithm"
+        evaluate(args, method_name=method_name, SAT_solver_file_path=composite_cpp)
+    finally:
+        args.task = prev_task
+
+    result_file = _latest_result_file(args.results_save_path, method_name)
+    if not result_file:
+        raise FileNotFoundError(f"No eval result file found for final composition {method_name}")
+
+    return {
+        "composition": {
+            task: {
+                "global_id": payload.get("global_id"),
+                "train_PAR-2": payload.get("train_par2"),
+            }
+            for task, payload in sorted(selected_codes_by_task.items())
+        },
+        "eval_PAR-2": _read_eval_par2(result_file),
+        "solver_path": composite_cpp,
+    }
+
+
 def _run_eval_stage(args, final, extra_params, fallback_task, paths):
     print('start evaluation ...', flush=True)
     if os.path.exists(args.temp_results_dir):
@@ -223,8 +416,12 @@ def _run_eval_stage(args, final, extra_params, fallback_task, paths):
     else:
         print('[Eval] Baseline threshold from run result (PAR-2): {}'.format(baseline), flush=True)
 
-    record_info = _collect_eval_candidates(final, extra_params, baseline)
-    print("{} Files to evaluate...".format(len(record_info)), flush=True)
+    eval_candidate_mode = str(getattr(args, "eval_candidate_mode", "all") or "all").strip().lower()
+    eval_final_composition = bool(getattr(args, "eval_final_composition", False))
+
+    all_record_info = _collect_eval_candidates(final, extra_params, baseline)
+    record_info = _select_eval_candidates(all_record_info, eval_candidate_mode, fallback_task)
+    print(f"[Eval] candidate_mode={eval_candidate_mode}; selected {len(record_info)} candidate(s) out of {len(all_record_info)}", flush=True)
     if len(record_info) == 0:
         return
 
@@ -239,6 +436,15 @@ def _run_eval_stage(args, final, extra_params, fallback_task, paths):
     else:
         print("[Eval] Baseline evaluation disabled by config.", flush=True)
 
+    accepted_by_task = {}
+    current_best_eval = {}
+    if eval_candidate_mode == "replay_writeback":
+        for task_name in sorted({_infer_task_from_code(code) or fallback_task for _, _, code, _ in record_info if (_infer_task_from_code(code) or fallback_task)}):
+            baseline_method_name = f"baseline_{task_name}_{args.llm_model}".replace('/', '')
+            baseline_file = _latest_result_file(args.results_save_path, baseline_method_name)
+            if baseline_file:
+                current_best_eval[task_name] = _read_eval_par2(baseline_file)
+
     for idx, (global_id, par_2, answer_code, params_dict) in enumerate(record_info, start=1):
         task_name = _infer_task_from_code(answer_code) or fallback_task
         if not task_name:
@@ -248,52 +454,126 @@ def _run_eval_stage(args, final, extra_params, fallback_task, paths):
                 stacklevel=2,
             )
             continue
-        project_dir = os.path.join(args.project, task_name)
-        source_template = os.path.join("./examples/", project_dir, "EasySAT.cpp")
-        if not os.path.exists(source_template):
-            warnings.warn(
-                f"[Eval] Skip candidate {global_id}: task template not found for {task_name} ({source_template}).",
-                category=UserWarning,
-                stacklevel=2,
-            )
-            continue
 
         method_name = f"{task_name}_{args.llm_model}_{global_id}".replace('/', '')
         existing_eval = glob.glob(os.path.join(args.results_save_path, f"results_{method_name}_*.txt"))
         if existing_eval:
             print(f"[Eval] Skip {idx}/{len(record_info)} {method_name}: already evaluated ({len(existing_eval)} file(s)).", flush=True)
+            try:
+                eval_par2 = _read_eval_par2(existing_eval[-1])
+                if eval_candidate_mode == "replay_writeback":
+                    prev_best = current_best_eval.get(task_name, float("inf"))
+                    if eval_par2 < prev_best:
+                        current_best_eval[task_name] = eval_par2
+                        accepted_by_task[task_name] = {
+                            "global_id": global_id,
+                            "train_par2": par_2,
+                            "eval_par2": eval_par2,
+                            "code": answer_code,
+                            "params": params_dict,
+                        }
+                elif eval_candidate_mode == "best_per_task":
+                    accepted_by_task[task_name] = {
+                        "global_id": global_id,
+                        "train_par2": par_2,
+                        "eval_par2": eval_par2,
+                        "code": answer_code,
+                        "params": params_dict,
+                    }
+            except Exception:
+                pass
             continue
 
         print(f"[Eval] Run {idx}/{len(record_info)}: {method_name}", flush=True)
-        SAT_folder = os.path.join(args.temp_root, f'EasySAT_{method_name}')
-        copy_folder(src_folder=args.temp_easy_root, num=1, mode='eval', target_folder=SAT_folder)
-        SAT_solver_file_path = os.path.join(SAT_folder, 'EasySAT_modified.cpp')
-
-        fill_core_codes(
-            origin_file=source_template,
-            target_file=SAT_solver_file_path,
-            answer_code=answer_code,
-            **params_dict,
-        )
-        ok, compile_error = _validate_filled_solver(SAT_solver_file_path, method_name)
-        if not ok:
+        try:
+            eval_par2, _ = _evaluate_candidate(args, task_name, method_name, answer_code, params_dict)
+            if eval_candidate_mode == "replay_writeback":
+                prev_best = current_best_eval.get(task_name, float("inf"))
+                if eval_par2 < prev_best:
+                    current_best_eval[task_name] = eval_par2
+                    accepted_by_task[task_name] = {
+                        "global_id": global_id,
+                        "train_par2": par_2,
+                        "eval_par2": eval_par2,
+                        "code": answer_code,
+                        "params": params_dict,
+                    }
+                    print(f"[EvalReplay] ACCEPT task={task_name} gid={global_id} eval_PAR-2={eval_par2:.2f} < prev_best={prev_best:.2f}", flush=True)
+                else:
+                    print(f"[EvalReplay] SKIP task={task_name} gid={global_id} eval_PAR-2={eval_par2:.2f} >= prev_best={prev_best:.2f}", flush=True)
+            elif eval_candidate_mode == "best_per_task":
+                accepted_by_task[task_name] = {
+                    "global_id": global_id,
+                    "train_par2": par_2,
+                    "eval_par2": eval_par2,
+                    "code": answer_code,
+                    "params": params_dict,
+                }
+        except Exception as exc:
             warnings.warn(
-                f"[Eval] Skip candidate {global_id} ({task_name}): compile check failed.\n{compile_error}",
+                f"[Eval] Skip candidate {global_id} ({task_name}): eval failed.\n{exc}",
                 category=UserWarning,
                 stacklevel=2,
             )
             continue
 
-        prev_task = getattr(args, "task", "")
-        try:
-            args.task = task_name
-            evaluate(args, method_name=method_name, SAT_solver_file_path=SAT_solver_file_path)
-        finally:
-            args.task = prev_task
+    if eval_final_composition:
+        if eval_candidate_mode == "all":
+            best_by_task = {}
+            for global_id, par_2, answer_code, params_dict in all_record_info:
+                task_name = _infer_task_from_code(answer_code) or fallback_task
+                if not task_name:
+                    continue
+                prev = best_by_task.get(task_name)
+                if prev is None or par_2 < prev["train_par2"]:
+                    best_by_task[task_name] = {
+                        "global_id": global_id,
+                        "train_par2": par_2,
+                        "code": answer_code,
+                        "params": params_dict,
+                    }
+            accepted_by_task = best_by_task
+        if accepted_by_task:
+            print(f"[Eval] Running ONE final composite solver with {len(accepted_by_task)} selected best functions...", flush=True)
+            summary = _evaluate_final_composition(args, accepted_by_task, tag=f"final_{eval_candidate_mode}")
+            summary_path = os.path.join(args.results_root, f"eval_final_composition_{eval_candidate_mode}.json")
+            with open(summary_path, "w", encoding="utf-8") as f:
+                json.dump(summary, f, ensure_ascii=False, indent=2)
+            print(f"[Eval] Final composition summary saved to {summary_path}", flush=True)
 
 
 def _maybe_run_baseline_eval(args):
     _maybe_run_baseline_eval_for_task(args, getattr(args, "task", ""))
+
+
+def _writeback_template(task_name: str, code: str, project: str) -> None:
+    """Replace {{ replace_code }} in the task EasySAT.cpp template with *code*.
+
+    Saves a .bak backup on the first write per template file.
+    Raises if the template is missing or has no {{ replace_code }} placeholder.
+    """
+    template_path = os.path.join("./examples/", project.strip("/"), task_name, "EasySAT.cpp")
+    if not os.path.exists(template_path):
+        raise FileNotFoundError(f"Template not found: {template_path}")
+
+    with open(template_path, "r", encoding="utf-8") as f:
+        content = f.read()
+
+    placeholder_re = re.compile(r"\{\{\s*replace_code\s*\}\}")
+    if not placeholder_re.search(content):
+        raise ValueError(f"No {{{{ replace_code }}}} placeholder in {template_path}")
+
+    backup_path = template_path + ".bak"
+    if not os.path.exists(backup_path):
+        import shutil as _shutil
+        _shutil.copy(template_path, backup_path)
+        print(f"[WriteBack] Backup saved: {backup_path}", flush=True)
+
+    # Use a lambda to avoid re.sub interpreting backslashes in the replacement string
+    new_content = placeholder_re.sub(lambda _: code, content)
+    with open(template_path, "w", encoding="utf-8") as f:
+        f.write(new_content)
+    print(f"[WriteBack] Updated template: {template_path}", flush=True)
 
 
 def _select_task_for_run(args):
@@ -386,6 +666,46 @@ def _atomic_write_json(path_obj, payload):
         f.flush()
         os.fsync(f.fileno())
     os.replace(tmp_path, path_obj)
+
+
+LLM_CONFIG_KEYS = {
+    "llm_model",
+    "api_base",
+    "api_key",
+    "model_name",
+}
+
+
+def _sanitize_config_for_persistence(config_dict):
+    sanitized = {}
+    for key, value in (config_dict or {}).items():
+        if key in LLM_CONFIG_KEYS:
+            continue
+        sanitized[key] = value
+    return sanitized
+
+
+def _collect_runtime_llm_env():
+    snapshot = {}
+    for key in ["AUTOSAT_API_TYPE", "AUTOSAT_LLM_MODEL", "AUTOSAT_API_BASE"]:
+        value = (os.getenv(key) or "").strip()
+        if value:
+            snapshot[key] = value
+    if (os.getenv("AUTOSAT_API_KEY") or "").strip():
+        snapshot["AUTOSAT_API_KEY"] = "***redacted***"
+    return snapshot
+
+
+def _save_run_metadata(paths, args, config_payload):
+    metadata = {
+        "run_id": str(getattr(args, "run_id", "") or ""),
+        "task_namespace": str(getattr(args, "task_namespace", "") or ""),
+        "config_path": str(getattr(args, "config", "") or ""),
+        "saved_at": time.time(),
+        "runtime_llm_env": _collect_runtime_llm_env(),
+        "config": _sanitize_config_for_persistence(config_payload),
+    }
+    _atomic_write_json(Path(paths["results_root"]) / "run_metadata.json", metadata)
 
 
 def _save_checkpoint(next_iter, results, answers, extra_params, best_result, checkpoint_dir="./results/checkpoints", run_id=""):
@@ -525,15 +845,32 @@ def _apply_env_overrides(args):
     return args
 
 
-@ray.remote
 def synchronized_asked(prompt_file_dir, count, args):
 
     llm_api = get_llm_api(args)
     temperature = getattr(args, 'temperature', 1.0)
-    answer = llm_api.call_api(prompt_file=prompt_file_dir, temperature=temperature)
+    use_structured = getattr(llm_api, '_structured_output', False)
 
-    answer_code = get_code(answer, seperator=['// start\n', '\n// end'])
-    lbd_queue_size = get_code(answer, seperator=['// start lbd_queue_size\n', '\n// end lbd_queue_size'])
+    if use_structured:
+        # Structured output path: model returns JSON with "code" and "lbd_queue_size"
+        answer_code, lbd_queue_size = llm_api.call_api_structured(
+            prompt_file=prompt_file_dir, temperature=temperature
+        )
+        print(f"[StructuredOutput] iter_count={count} code_len={len(answer_code)} lbd={lbd_queue_size!r}", flush=True)
+    else:
+        # Legacy text-parsing path
+        answer = llm_api.call_api(prompt_file=prompt_file_dir, temperature=temperature)
+        answer_code = get_code(answer, seperator=['// start\n', '\n// end'])
+        lbd_queue_size = get_code(answer, seperator=['// start lbd_queue_size\n', '\n// end lbd_queue_size'])
+
+    # If structured output returned a raw JSON string (from _call_structured_raw via call_api),
+    # try to parse it here as a safety net.
+    if answer_code.strip().startswith('{'):
+        parsed_code, parsed_lbd = _parse_structured_response(answer_code)
+        if parsed_code:
+            answer_code = parsed_code
+            if parsed_lbd:
+                lbd_queue_size = parsed_lbd
 
     if len(answer_code.strip()) < 20:
         reference_code = _extract_reference_code(prompt_file_dir)
@@ -543,7 +880,6 @@ def synchronized_asked(prompt_file_dir, count, args):
     return count, answer_code, lbd_queue_size.strip()
 
 
-@ray.remote
 def synchronized_executed(count, results, arguments, answer_code, *args, **kwargs):
     project_dir = os.path.join(arguments.project, arguments.task)
     execution_worker = ExecutionWorker()
@@ -597,6 +933,7 @@ def main(args):
     args.eval_results_dir = str(paths["eval_results_dir"])
     args.results_save_path = args.eval_results_dir
     os.makedirs(args.temp_results_dir, exist_ok=True)
+    _save_run_metadata(paths, args, getattr(args, "_loaded_config_payload", {}))
 
     if eval_only_from_run:
         if not os.path.exists(args.temp_easy_root):
@@ -703,6 +1040,17 @@ def main(args):
     if baseline_initialized_now and baseline_executed_now:
         print("EasySAT(baseline) result-- time: {} seconds ; PAR-2: {}".format(results["time"]["0"], results["PAR-2"]["0"]), flush=True)
 
+    # --- Save baseline result to run directory ---
+    if baseline_initialized_now:
+        baseline_payload = {
+            "time": results["time"].get("0"),
+            "PAR-2": results["PAR-2"].get("0"),
+            "prompt": results["prompt"].get("0", ""),
+            "executed": baseline_executed_now,
+        }
+        _atomic_write_json(paths["results_root"] / "baseline_result.json", baseline_payload)
+        print(f"[Baseline] Saved baseline_result.json → {paths['results_root'] / 'baseline_result.json'}", flush=True)
+
     start_iter_override = getattr(args, "start_iter_override", None)
     end_iter_override = getattr(args, "end_iter_override", None)
     loop_start = start_iter if start_iter_override is None else int(start_iter_override)
@@ -711,6 +1059,19 @@ def main(args):
         loop_end = loop_start
 
     result = {}  # Initialize result to avoid UnboundLocalError
+    # template_update_strategy controls whether/how the EasySAT.cpp template is
+    # updated during training when a better implementation is found.
+    #   "none"         – no write-back (default, original behaviour)
+    #   "greedy_train" – write back only when training PAR-2 strictly improves over prev written
+    #   "annealing"    – write back using SA Metropolis criterion with log-annealed temperature
+    #                    T(i) = 1.0*(0.1/1.0)^(i/(N-1)); objective = δPAR2/(0.25*PAR2_baseline)
+    _template_strategy = str(
+        getattr(args, "template_update_strategy", "none") or "none"
+    ).strip().lower()
+    # Track last written-back PAR-2 per task to avoid redundant writes
+    _writeback_par2_per_task: dict = {}
+    # Track iteration when template was last written per task (for current_code_age)
+    _writeback_age_per_task: dict = {}
 
     for i in range(loop_start, loop_end):
 
@@ -739,11 +1100,52 @@ def main(args):
                 print("iteration: ", i, "\n results_prompt: \n", result_prompt, flush=True)
 
                 # Add the result matrix into next round prompt.
+                _feedback_extra = {}
+
+                # Always pass training progress info so all feedback_prompt.txt templates can use it
+                _feedback_extra["current_iteration"] = i
+                _feedback_extra["total_iterations"] = loop_end
+
+                if _template_strategy in ("greedy_train", "annealing"):
+                    # original_code: baseline function from original_prompt.txt (never changes)
+                    _orig_prompt = os.path.join("./examples/", project_dir, "original_prompt.txt")
+                    _feedback_extra["original_code"] = _extract_reference_code(_orig_prompt)
+
+                    # current_template_code: current function from EasySAT.cpp template
+                    # (may have been updated by write-back; reflects what the LLM will build upon)
+                    _current_template = os.path.join("./examples/", project_dir, "EasySAT.cpp")
+                    _current_code = _extract_reference_code(_current_template)
+                    # Only show if different from baseline (i.e. write-back has occurred)
+                    _feedback_extra["current_template_code"] = _current_code
+
+                    # current_code_age: how many iterations ago the template was last updated
+                    _last_wb_iter = _writeback_age_per_task.get(current_task, None)
+                    if _last_wb_iter is None:
+                        _feedback_extra["current_code_age"] = "original (never updated during this run)"
+                    else:
+                        _age = i - _last_wb_iter
+                        _feedback_extra["current_code_age"] = (
+                            f"Updated {_age} iteration(s) ago (at iteration {_last_wb_iter})"
+                        )
+
+                    # training_history: PAR-2 per iteration, sorted by key
+                    _hist_lines = []
+                    _baseline_par2 = results["PAR-2"].get("0")
+                    if _baseline_par2 is not None:
+                        _hist_lines.append(f"iter 0 (baseline): {_baseline_par2:.0f}")
+                    for _hk in sorted(results["PAR-2"].keys(), key=lambda k: int(k) if k.isdigit() else float("inf")):
+                        if _hk == "0":
+                            continue
+                        _hv = results["PAR-2"][_hk]
+                        _hist_lines.append(f"iter {_hk}: {_hv:.0f}")
+                    _feedback_extra["training_history"] = "\n".join(_hist_lines)
+
                 revise_file(file_name= os.path.join("./examples/", project_dir, "feedback_prompt.txt"),
                             save_dir=os.path.join(args.temp_prompts_dir, 'feedback_prompt.txt'),
                             replace_code=result_prompt,
                             original_time=int(results["time"]["0"]),
-                            best_code=list(best_result.values())[0][1]
+                            best_code=list(best_result.values())[0][1],
+                            **_feedback_extra
                             )
                 prompt_file_dir = os.path.join(args.temp_prompts_dir, 'feedback_prompt.txt')
             else:
@@ -758,18 +1160,27 @@ def main(args):
         except Exception as e:
             print(f"[DEBUG] PROMPT READ ERROR: {e}")
 
+        # --- Simulated annealing acceptance temperature (for write-back decision, NOT LLM temperature) ---
+        # T(i) = 1.0 * (0.1 / 1.0) ^ (i / max(N-1, 1))  — log-annealing from 1.0 to 0.1
+        # Used in Metropolis acceptance criterion: accept worse solution with prob exp(-objective / T)
+        # where objective = δPAR2 / (0.25 * PAR2_baseline)
+        # Only active when template_update_strategy == "annealing"
+        if _template_strategy == "annealing":
+            _T_max_sa, _T_min_sa = 1.0, 0.1
+            _N_sa = max(loop_end - loop_start, 1)
+            _sa_accept_temp = _T_max_sa * (_T_min_sa / _T_max_sa) ** (i / max(_N_sa - 1, 1))
+            print(f"[SA] iter={i} acceptance_temperature={_sa_accept_temp:.4f} "
+                  f"(log-annealing {_T_max_sa}→{_T_min_sa} over {_N_sa} iters)", flush=True)
+        else:
+            _sa_accept_temp = None
+
         start_time = time.time()
         answer_code_cur_round = {}
         lbd_queue_size_cur_round = {}
-        tasks = [synchronized_asked.remote(prompt_file_dir, i * args.batch_size + batch_id + 1, args)
+        tasks = [synchronized_asked(prompt_file_dir, i * args.batch_size + batch_id + 1, args)
                  for batch_id in range(args.batch_size)]
-        print(f"[Iteration {i}] Waiting for LLM responses from {len(tasks)} tasks...", flush=True)
-        try:
-            futures = ray.get(tasks, timeout=args.timeout * 10)
-        except Exception as e:
-            print(f"[ERROR] Ray task timeout or failure: {e}", flush=True)
-            raise
-        for future in futures:
+        print(f"[Iteration {i}] LLM responses collected from {len(tasks)} tasks.", flush=True)
+        for future in tasks:
             count, answer_code, lbd_queue_size = future
             batch_id = get_batch_id(count, args.batch_size)
             answer_code_cur_round[batch_id] = answer_code
@@ -779,26 +1190,21 @@ def main(args):
 
         start_time = time.time()
         if args.task == "restart_condition":
-            tasks = [synchronized_executed.remote(
+            tasks = [synchronized_executed(
                      count=i * args.batch_size + batch_id + 1,
                      results=results, arguments=args,
                      answer_code=answer_code_cur_round[batch_id],
                      lbd_queue_size=lbd_queue_size_cur_round[batch_id]) for batch_id in range(args.batch_size)]
 
         else:
-            tasks = [synchronized_executed.remote(
+            tasks = [synchronized_executed(
                      count=i * args.batch_size + batch_id + 1,
                      results=results, arguments=args,
                      answer_code=answer_code_cur_round[batch_id]) for batch_id in range(args.batch_size)]
 
         repetition_dict = {}
-        print(f"[Iteration {i}] Waiting for execution results from {len(tasks)} tasks...", flush=True)
-        try:
-            execute_futures = ray.get(tasks, timeout=args.timeout * 10)
-        except Exception as e:
-            print(f"[ERROR] Execution task timeout or failure: {e}", flush=True)
-            raise
-        for future in execute_futures:
+        print(f"[Iteration {i}] Execution results collected from {len(tasks)} tasks.", flush=True)
+        for future in tasks:
             count, success, answer_code = future
             answers[count] = answer_code
 
@@ -858,6 +1264,70 @@ def main(args):
         _save_iteration_artifacts(i, result, best_result, paths["temp_prompts_dir"], paths["results_root"], paths["snapshots_dir"])
         _save_checkpoint(i + 1, results, answers, extra_params, best_result, checkpoint_dir=checkpoint_dir, run_id=run_id)
 
+        # --- Training write-back: update template when strategy requires it ---
+        # Controlled by template_update_strategy in config:
+        #   "none"         – no write-back (default)
+        #   "greedy_train" – write back only when PAR-2 strictly improves over last written
+        #   "annealing"    – write back using SA Metropolis criterion (see _sa_accept_temp above)
+        if _template_strategy in ("greedy_train", "annealing") and best_result:
+            try:
+                import math as _math
+                import random as _random
+                best_key = list(best_result.keys())[0]
+                best_par2 = best_result[best_key][2]
+                best_code = best_result[best_key][1]
+                baseline_par2 = results["PAR-2"].get("0", float("inf"))
+                if best_par2 < baseline_par2 and best_code and len(best_code.strip()) >= 20:
+                    task_for_writeback = _infer_task_from_code(best_code) or current_task
+                    prev_written = _writeback_par2_per_task.get(task_for_writeback, float("inf"))
+                    if _template_strategy == "greedy_train":
+                        # Strict improvement only
+                        _accept = best_par2 < prev_written
+                        _accept_reason = (
+                            f"strict improvement (PAR-2={best_par2:.0f} < prev={prev_written:.0f})"
+                            if _accept else
+                            f"no improvement (PAR-2={best_par2:.0f} >= prev={prev_written:.0f}), skipped"
+                        )
+                    else:
+                        # SA Metropolis acceptance criterion
+                        # objective = δPAR2 / (0.25 * PAR2_baseline)
+                        # δPAR2 = best_par2 - prev_written  (negative = improvement)
+                        _delta_par2 = best_par2 - prev_written
+                        _sa_objective = _delta_par2 / (0.25 * baseline_par2) if baseline_par2 > 0 else _delta_par2
+                        _T = _sa_accept_temp if _sa_accept_temp is not None else 1.0
+                        if _sa_objective < 0:
+                            _accept = True
+                            _accept_reason = f"SA improvement (objective={_sa_objective:.4f})"
+                        else:
+                            _accept_prob = _math.exp(-_sa_objective / _T) if _T > 0 else 0.0
+                            _accept = _random.random() < _accept_prob
+                            _accept_reason = (
+                                f"SA Metropolis: prob={_accept_prob:.4f} "
+                                f"(objective={_sa_objective:.4f}, T={_T:.4f}), "
+                                f"{'accepted' if _accept else 'rejected'}"
+                            )
+                    print(f"[WriteBack] iter={i} task={task_for_writeback} "
+                          f"PAR-2={best_par2:.0f} (prev={prev_written:.0f}, "
+                          f"baseline={baseline_par2:.0f}) → {_accept_reason}", flush=True)
+                    if _accept:
+                        try:
+                            _writeback_template(task_for_writeback, best_code, args.project)
+                            _writeback_par2_per_task[task_for_writeback] = best_par2
+                            _writeback_age_per_task[task_for_writeback] = i
+                            print(f"[WriteBack] iter={i} → template updated", flush=True)
+                        except Exception as _wb_exc:
+                            warnings.warn(
+                                f"[WriteBack] iter={i}: failed to update template: {_wb_exc}",
+                                category=UserWarning,
+                                stacklevel=2,
+                            )
+            except Exception as _wb_outer:
+                warnings.warn(
+                    f"[WriteBack] iter={i}: unexpected error: {_wb_outer}",
+                    category=UserWarning,
+                    stacklevel=2,
+                )
+
     final = {}
     for key in results["time"]:
         final[key] = {
@@ -870,7 +1340,16 @@ def main(args):
     with open(paths["results_root"] / 'final_result.json', 'w', encoding='utf-8') as f:
         json.dump(final, f, ensure_ascii=False, indent=2)
 
-    ray.shutdown()
+    # --- Auto-generate training curve plot ---
+    try:
+        baseline_par2 = final.get("0", {}).get("PAR-2")
+        plot_training_curve(
+            results_root=paths["results_root"],
+            baseline_par2=baseline_par2,
+            run_id=run_id,
+        )
+    except Exception as _plot_exc:
+        warnings.warn(f"[Plotting] Failed to generate training curve: {_plot_exc}", category=UserWarning, stacklevel=2)
 
     if not bool(getattr(args, "run_eval", True)):
         print("skip evaluation for this step (run_eval=False)", flush=True)
@@ -912,16 +1391,30 @@ if __name__ == '__main__':
     parser.add_argument('--eval_only_from_run', type=bool, default=False)
     parser.add_argument('--start_iter_override', type=int, default=None)
     parser.add_argument('--end_iter_override', type=int, default=None)
+    parser.add_argument(
+        '--template_update_strategy',
+        type=str,
+        default='none',
+        help=(
+            'Controls whether/how EasySAT.cpp templates are updated during training. '
+            '"none" = no write-back (default); '
+            '"greedy_train" = write back only when PAR-2 strictly improves; '
+            '"annealing" = SA Metropolis write-back with log-annealed temperature '
+            '(T: 1.0→0.1), objective = δPAR2/(0.25*PAR2_baseline).'
+        ),
+    )
 
     args = parser.parse_args()
 
+    loaded_config = {}
     if os.path.exists(args.config):
         with open(args.config, 'r') as file:
-            config = yaml.safe_load(file)
-            for key, value in config.items():
+            loaded_config = yaml.safe_load(file) or {}
+            for key, value in loaded_config.items():
                 setattr(args, key, value)
 
     args = _apply_env_overrides(args)
+    args._loaded_config_payload = _sanitize_config_for_persistence(loaded_config)
 
     def _signal_handler(signum, frame):
         _graceful_shutdown(f"Signal received: {signum}", exit_code=128 + int(signum))

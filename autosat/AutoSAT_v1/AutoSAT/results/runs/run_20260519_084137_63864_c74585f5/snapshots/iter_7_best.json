@@ -1,0 +1,7 @@
+{
+  "iter": 7,
+  "best_id": "8",
+  "time": 3562,
+  "code": "// start\nvoid Solver::rephase() {\n    rephases = 0;\n    threshold = (int)(threshold * 0.85);\n    rephase_limit += 10000;\n    // Flip saved phases for all variables to escape local optima\n    for (int i = 1; i <= vars; i++) {\n        if (local_best[i] != 0)\n            saved[i] = local_best[i];\n        else\n            saved[i] = rand() % 2 ? 1 : -1;\n    }\n}\n// end",
+  "PAR-2": 3562
+}

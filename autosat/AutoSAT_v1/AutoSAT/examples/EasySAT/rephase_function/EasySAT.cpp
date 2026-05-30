@@ -265,7 +265,13 @@ void Solver::restart() {
     else if ((phase_rand -= 20) < 0)for (int i = 1; i <= vars; i++) saved[i] = rand() % 2 ? 1 : -1;
 }
 
-{{ replace_code }}
+// start
+void Solver::rephase() {
+    rephases = 0;
+    threshold *= 0.85;
+    rephase_limit += 4096;
+}
+// end
 
 void Solver::reduce() {
     backtrack(0);

@@ -1,0 +1,20 @@
+{
+  "time": {
+    "17": 3571
+  },
+  "prompt": {
+    "17": "// start\nvoid Solver::bump_var(int var, double coeff) {\n    double inc = var_inc * coeff;\n    // Apply a non-linear boost: variables at higher decision levels get extra bump\n    // to help escape local optima by prioritizing recently active variables\n    int lv = level[var];\n    if (lv > 0) {\n        // Scale increment by a logarithmic factor of the decision level\n        double level_boost = 1.0 + 0.1 * (lv > 10 ? 10 : lv);\n        inc *= level_boost;\n    }\n    if ((activity[var] += inc) > 1e100) {\n        for (int i = 1; i <= vars; i++) activity[i] *= 1e-100;\n        var_inc *= 1e-100;\n    }\n    if (vsids.inHeap(var)) vsids.update(var);\n}\n// end"
+  },
+  "PAR-2": {
+    "17": 3571
+  },
+  "satisfiable": {
+    "17": 5
+  },
+  "unsatisfiable": {
+    "17": 7
+  },
+  "timeout": {
+    "17": 0
+  }
+}

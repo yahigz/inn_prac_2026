@@ -1,0 +1,7 @@
+{
+  "iter": 11,
+  "best_id": "12",
+  "time": 2850,
+  "code": "// start\nvoid Solver::rephase() {\n    rephases = 0;\n    threshold *= 0.85;\n    rephase_limit += 4096 + (int)(conflicts * 0.001);\n    // Occasionally flip the saved phases to escape local optima\n    int mode = (int)(conflicts / 10000) % 4;\n    if (mode == 0) {\n        for (int i = 1; i <= vars; i++) saved[i] = local_best[i];\n    } else if (mode == 1) {\n        for (int i = 1; i <= vars; i++) saved[i] = -local_best[i];\n    } else if (mode == 2) {\n        for (int i = 1; i <= vars; i++) saved[i] = rand() % 2 ? 1 : -1;\n    } else {\n        for (int i = 1; i <= vars; i++) saved[i] = local_best[i];\n    }\n}\n// end",
+  "PAR-2": 2850
+}

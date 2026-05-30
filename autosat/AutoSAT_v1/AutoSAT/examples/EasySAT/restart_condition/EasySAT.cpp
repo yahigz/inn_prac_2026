@@ -331,7 +331,8 @@ int Solver::solve() {
             }
         }
         else if (reduces >= reduce_limit) reduce();
-        {{ replace_code }}
+        else if (lbd_queue_size == 50 && 0.8 * fast_lbd_sum / lbd_queue_size > slow_lbd_sum / conflicts && conflicts % 2 == 0) restart();
+else if (lbd_queue_size == 50 && 0.9 * fast_lbd_sum / lbd_queue_size > slow_lbd_sum / conflicts && conflicts % 3 == 0) restart();
         else if (rephases >= rephase_limit) rephase();
         else res = decide();
     }

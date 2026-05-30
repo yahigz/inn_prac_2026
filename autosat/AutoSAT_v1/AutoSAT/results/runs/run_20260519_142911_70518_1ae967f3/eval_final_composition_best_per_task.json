@@ -1,0 +1,22 @@
+{
+  "composition": {
+    "bump_var_function": {
+      "global_id": 1,
+      "train_PAR-2": 2542
+    },
+    "rephase_function": {
+      "global_id": 8,
+      "train_PAR-2": 3550
+    },
+    "restart_condition": {
+      "global_id": 10,
+      "train_PAR-2": 2981
+    },
+    "restart_function": {
+      "global_id": 11,
+      "train_PAR-2": 3500
+    }
+  },
+  "eval_PAR-2": 253.62,
+  "solver_path": "temp/runs/run_20260519_142911_70518_1ae967f3/EasySAT_final_best_per_task/EasySAT_modified.cpp"
+}

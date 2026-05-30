@@ -1,0 +1,20 @@
+{
+  "time": {
+    "8": 3562
+  },
+  "prompt": {
+    "8": "// start\nvoid Solver::rephase() {\n    rephases = 0;\n    threshold = (int)(threshold * 0.85);\n    rephase_limit += 10000;\n    // Flip saved phases for all variables to escape local optima\n    for (int i = 1; i <= vars; i++) {\n        if (local_best[i] != 0)\n            saved[i] = local_best[i];\n        else\n            saved[i] = rand() % 2 ? 1 : -1;\n    }\n}\n// end"
+  },
+  "PAR-2": {
+    "8": 3562
+  },
+  "satisfiable": {
+    "8": 5
+  },
+  "unsatisfiable": {
+    "8": 7
+  },
+  "timeout": {
+    "8": 0
+  }
+}

@@ -184,11 +184,13 @@ def collect_results_eval(raw_path, final_path, args):
     return result_dict
 
 
-def fill_core_codes(origin_file, target_file, answer_code,**kwargs):
+def fill_core_codes(origin_file, target_file, answer_code, **kwargs):
+    timeout_value = kwargs.pop('timeout', '{{ timeout }}')
+    data_dir_value = kwargs.pop('data_dir', '{{ data_dir }}')
     revise_file(file_name=origin_file,
                 save_dir=target_file,
-                timeout='{{ timeout }}',
-                data_dir='{{ data_dir }}',
+                timeout=timeout_value,
+                data_dir=data_dir_value,
                 replace_code=answer_code,
                 **kwargs)
     return

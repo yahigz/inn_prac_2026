@@ -7,7 +7,6 @@ rand_seed: 42
 
 project: 'EasySAT/'
 baseline_solver_path: './examples/EasySAT/original_EasySAT/EasySAT.cpp'
-llm_model: 'checkpoint_eval'
 task_selection_mode: 'cycle'
 fallback_task: 'rephase_function'
 

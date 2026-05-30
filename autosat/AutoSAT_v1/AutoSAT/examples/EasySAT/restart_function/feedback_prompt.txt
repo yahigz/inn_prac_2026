@@ -21,6 +21,29 @@ void Solver::restart() {
 execution time is {{ original_time }} seconds.
 ###
 
+{% if original_code is defined and original_code %}
+The unmodified baseline restart function (for reference):
+'''
+{{ original_code }}
+'''
+{% endif %}
+{% if current_template_code is defined and current_template_code %}
+The current restart function in the template (starting point for this iteration; may have been updated from a previous improvement):
+'''
+{{ current_template_code }}
+'''
+{% endif %}
+{% if current_code_age is defined and current_code_age %}
+Current template status: {{ current_code_age }}
+{% endif %}
+{% if training_history is defined and training_history %}
+Training history (PAR-2 per iteration, no code):
+{{ training_history }}
+{% endif %}
+{% if current_iteration is defined and total_iterations is defined %}
+Training progress: iteration {{ current_iteration }} of {{ total_iterations }} total.
+{% endif %}
+
 Experiment results are:
 ###
 {{ replace_code }}

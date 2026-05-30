@@ -1,0 +1,20 @@
+{
+  "time": {
+    "9": 7110
+  },
+  "prompt": {
+    "9": "// start\nvoid Solver::bump_var(int var, double coeff) {\n    // Use a non-linear bump: variables at higher decision levels get a stronger boost\n    // This helps focus attention on variables involved in recent, high-level conflicts\n    double level_boost = 1.0;\n    if (level[var] > 0) {\n        // Scale boost by log of decision level to favor recently active variables\n        int lv = level[var];\n        if (lv > 1) {\n            // Apply a mild logarithmic boost based on decision level\n            level_boost = 1.0 + 0.1 * (lv > 10 ? 10 : lv) / 10.0;\n        }\n    }\n    if ((activity[var] += var_inc * coeff * level_boost) > 1e100) {\n        for (int i = 1; i <= vars; i++) activity[i] *= 1e-100;\n        var_inc *= 1e-100;\n    }\n    if (vsids.inHeap(var)) vsids.update(var);\n}\n// end"
+  },
+  "PAR-2": {
+    "9": 7110
+  },
+  "satisfiable": {
+    "9": 5
+  },
+  "unsatisfiable": {
+    "9": 7
+  },
+  "timeout": {
+    "9": 0
+  }
+}

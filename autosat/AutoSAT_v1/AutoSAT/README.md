@@ -89,6 +89,16 @@ python3 -m autosat.evaluation.evaluate \
 > - Use [examples/EasySAT/eval_config.yaml](./examples/EasySAT/eval_config.yaml) for a YAML-based eval run.
 > - The final evaluation results are saved in the folder you set via `results_save_path`.
 
+### Training plots
+
+If you want to visualize the per-iteration learning curve from a run folder, use:
+
+```bash
+python3 scripts/plot_training_history.py ./results/runs/<run_id> --cycle-length 4
+```
+
+By default, the script plots `time` and `PAR-2` from every `iter_*_result.json` file and colors points by `iteration % 4` so repeated functions can be tracked visually.
+
 ## Dataset
 
 - All datasets can be obtained from [cnf_data_link](https://drive.google.com/drive/folders/1-au8hBbx4YAdJDlct9glCODpL0TQcYnA?usp=drive_link)

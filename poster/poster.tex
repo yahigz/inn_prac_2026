@@ -1,0 +1,162 @@
+\documentclass[final]{beamer}
+
+% ====================
+% Пакеты (Ваш базовый набор + Beamerposter)
+% ====================
+\usepackage[T2A]{fontenc} % Корректная кодировка шрифтов для кириллицы
+\usepackage[utf8]{inputenc}
+\usepackage[english, russian]{babel} % Поддержка двух языков
+
+% Ваши математические и графические пакеты
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage{graphicx}
+\usepackage{multicol}
+\usepackage{tikz}
+\usetikzlibrary{calc, intersections}
+
+% Пакеты для оформления постера
+\usepackage[size=custom, width=120,height=72, scale=1]{beamerposter}
+\usetheme{gemini}
+\usecolortheme{msu}
+\usepackage{booktabs} % Оставляем для красивых таблиц (toprule/midrule)
+
+% ====================
+% Ваши макросы и сокращения
+% ====================
+\newcommand{\fr}{\frac}
+\newcommand{\pd}{\partial}
+\newcommand{\limm}{\lim\limits}
+\newcommand{\vect}{\overline}
+\newcommand{\divisible}{\;\mathop{\raisebox{-2pt}{\vdots}}\;}
+\DeclareMathOperator{\sign}{sign}
+
+% ====================
+% Геометрия колонок (Разметка)
+% ====================
+\newlength{\sepwidth}
+\newlength{\colwidth}
+\setlength{\sepwidth}{0.025\paperwidth}
+\setlength{\colwidth}{0.3\paperwidth}
+
+\newcommand{\separatorcolumn}{\begin{column}{\sepwidth}\end{column}}
+
+% ====================
+% Информационная часть
+% ====================
+\title{Некоторый классный заголовок постера}
+\author{Имя Автора}
+\institute[МГУ]{Московский государственный университет имени М.В. Ломоносова}
+
+% Футер (Нижняя плашка)
+\footercontent{
+  \href{https://github.com}{Github: https://github.com} \hfill
+  Постерная сессия \hfill
+  \href{mailto:youremail@msu.edu}{youremail@msu.edu}
+}
+
+% Логотип (Если файлов нет, закомментируйте эту строку)
+\logoright{\includegraphics[height=5cm]{logos/emblem-Michigan-State.jpg}}
+
+% Настройки гиперссылок (beamer/hyperref может быть загружен самим классом)
+\hypersetup{hidelinks}
+
+% ====================
+% Документ
+% ====================
+\begin{document}
+
+\begin{frame}[t]
+\begin{columns}[t]
+\separatorcolumn
+
+% --- КОЛОНКА 1 ---
+\begin{column}{\colwidth}
+
+  \begin{block}{Заголовок блока}
+    Текст блока с формулой. Ваша команда дроби: $\fr{\partial y}{\partial x}$.
+    
+    Lorem ipsum dolor sit amet, consectetur adipiscing elit. Morbi ultricies eget libero ac ullamcorper.
+
+    % Убран пустой figure, если картинки results_fig.pdf у вас нет
+  \end{block}
+
+  \begin{block}{Блок со списком}
+    Пример обычного маркированного списка:
+    \begin{itemize}
+      \item \textbf{Важный пункт} — описание элемента.
+      \item \textbf{Второй пункт} — продолжение мысли.
+    \end{itemize}
+  \end{block}
+
+  \begin{alertblock}{Выделенный блок (Alert)}
+    Этот блок привлекает внимание, сюда стоит поместить главные выводы или тезисы работы.
+  \end{alertblock}
+
+\end{column}
+
+\separatorcolumn
+
+% --- КОЛОНКА 2 ---
+\begin{column}{\colwidth}
+
+  \begin{block}{Нумерованный список}
+    Пример работы нумерации в теме Gemini:
+    \begin{enumerate}
+      \item \textbf{Первый шаг} исследования.
+      \item \textbf{Второй шаг} исследования.
+    \end{enumerate}
+  \end{block}
+
+  \begin{block}{Еще один блок}
+    Сюда можно вставить вашу графику TikZ или текст. Ваши макросы работают везде.
+    Пример предела: $\limm_{x \to \infty} f(x)$.
+  \end{block}
+
+\end{column}
+
+\separatorcolumn
+
+% --- КОЛОНКА 3 ---
+\begin{column}{\colwidth}
+
+  \begin{exampleblock}{Блок с математикой}
+    Математический блок (выделен другим цветом):
+    
+    \[
+    \int_{-\infty}^{\infty} e^{-x^2}\,dx = \sqrt{\pi}
+    \]
+
+    \heading{Внутренний заголовок}
+    Текст внутри блока после подзаголовка.
+  \end{exampleblock}
+
+  \begin{block}{Таблица результатов}
+    \begin{table}
+      \centering
+      \begin{tabular}{l r r c}
+        \toprule
+        \textbf{Столбец 1} & \textbf{Столбец 2} & \textbf{Столбец 3} & \textbf{Метка} \\
+        \midrule
+        Объект А & 13.37 & 384,394 & $\alpha$ \\
+        Объект Б & 2.17 & 1,392 & $\beta$ \\
+        \bottomrule
+      \end{tabular}
+      \caption{Подпись к таблице.}
+    \end{table}
+  \end{block}
+
+  \begin{block}{Литература}
+    % Убрана ломающая компиляцию пустая библиография. 
+    % Если есть .bib файл, раскомментируйте строку ниже:
+    % \footnotesize{\bibliographystyle{plain}\bibliography{poster}}
+    Здесь можно разместить основные ссылки вручную через itemize, если файла .bib нет.
+  \end{block}
+
+\end{column}
+
+\separatorcolumn
+\end{columns}
+\end{frame}
+
+\end{document}

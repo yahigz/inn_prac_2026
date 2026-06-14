@@ -1,0 +1,38 @@
+\begin{thebibliography}{1}
+
+\bibitem{ghaffari2015improveddistributedalgorithmmaximal}
+M.~Ghaffari.
+\newblock An improved distributed algorithm for maximal independent set, 2015.
+
+\bibitem{gu2024mambalineartimesequencemodeling}
+A.~Gu and T.~Dao.
+\newblock Mamba: Linear-time sequence modeling with selective state spaces,
+  2024.
+
+\bibitem{huang2021branchboundmixedinteger}
+L.~Huang, X.~Chen, W.~Huo, J.~Wang, F.~Zhang, B.~Bai, and L.~Shi.
+\newblock Branch and bound in mixed integer linear programming problems: A
+  survey of techniques and trends, 2021.
+
+\bibitem{rodionov2025discreteneuralalgorithmicreasoning}
+G.~Rodionov and L.~Prokhorenkova.
+\newblock Discrete neural algorithmic reasoning, 2025.
+
+\bibitem{2}
+Y.~Sun, F.~Ye, Z.~Chen, K.~Wei, and S.~Cai.
+\newblock Automatically discovering heuristics in a complex sat solver with
+  large language models.
+\newblock 2025.
+
+\bibitem{1}
+Y.~Sun, F.~Ye, X.~Zhang, S.~Huang, B.~Zhang, K.~Wei, and S.~Cai.
+\newblock Autosat: Automatically optimize sat solvers via large language
+  models.
+\newblock {\em Journal of Artificial Intelligence Research}, 1(11):1--37, 2024.
+
+\bibitem{vaswani2023attentionneed}
+A.~Vaswani, N.~Shazeer, N.~Parmar, J.~Uszkoreit, L.~Jones, A.~N. Gomez,
+  L.~Kaiser, and I.~Polosukhin.
+\newblock Attention is all you need, 2023.
+
+\end{thebibliography}

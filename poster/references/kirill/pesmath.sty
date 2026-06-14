@@ -1,0 +1,48 @@
+\ProvidesPackage{pesmath}
+\RequirePackage{amsmath}
+\RequirePackage{amssymb}
+\RequirePackage{gensymb}
+\RequirePackage{tabularx}
+
+
+\newcommand*\rfrac[2]{{}^{#1}\!/_{#2}}
+\newcommand{\seg}[1] {\overline{\text{#1}}}
+\newcommand{\ray}[1] {\overrightarrow{\text{#1}}}
+\newcommand{\congangles}[2] {\angle #1 \cong \angle #2}
+\newcommand{\congsegs}[2] {\overline{\text{#1}} \cong \seg{#2}}
+\newcommand{\congtriangles}[2] {\triangle #1 \cong \triangle #2}
+\renewcommand{\circle}[1] {\odot\text{#1}}
+\newcommand{\ncongsegs}[2] {\overline{\text{#1}}\ncong\overline{\text{#2}}}
+\newcommand{\ncongangles}[2] {\angle#1\ncong\angle#2}
+\newcommand{\ncongtriangles}[2] {\triangle#1\ncong\triangle#2}
+\renewcommand{\line}[1] {\overleftrightarrow{#1}}
+\newcommand{\para} {\parallel}
+\newcommand{\npara} {\nparallel}
+\newcommand{\nperp} {\not\perp}
+\newcommand{\perpsegs}[2] {\overline{\text{#1}}\perp\overline{\text{#2}}}
+\newcommand{\perplines}[2] {\overleftrightarrow{#1}\perp\overleftrightarrow{#2}}
+\newcommand{\perprays}[2] {\overrightarrow{\text{#1}}\perp\overrightarrow{\text{#2}}}
+\newcommand{\nperpsegs}[2] {\overline{\text{#1}}\nperp\overline{\text{#2}}}
+\newcommand{\nperprays}[2] {\overrightarrow{\text{#1}}\nperp\overrightarrow{\text{#2}}}
+\newcommand{\nperplines}[2] {\overleftrightarrow{\text{#1}}\nperp\overleftrightarrow{\text{#2}}}
+\newcommand{\parasegs}[2] {\overline{\text{#2}}\parallel\overline{\text{#2}}}
+\newcommand{\pararays}[2] {\overrightarrow{\text{#1}}\parallel\overrightarrow{\text{#2}}}
+\newcommand{\paralines}[2] {\overleftrightarrow{#1}\parallel\overleftrightarrow{#2}}
+\newcommand{\nparasegs}[2] {\overline{\text{#2}}\nparallel\overline{\text{#2}}}
+\newcommand{\npararays}[2] {\overrightarrow{\text{#1}}\nparallel\overrightarrow{\text{#2}}}
+\newcommand{\nparalines}[2] {\overleftrightarrow{#1}\nparallel\overleftrightarrow{#2}}
+\newcommand{\simtriangles}[2]{\triangle{#1}\sim\triangle{#2}}
+\newcommand{\prop}[4]{\frac{#1}{#2} = \frac{#3}{#4}}
+\newcommand{\arc}[1]{%
+  \setbox9=\hbox{#1}%
+  \ooalign{\resizebox{\wd9}{\height}{\texttoptiebar{\phantom{A}}}\cr#1}}
+\newcommand{\trig}[2]{\text{#1}\angle{#2}}
+
+
+    
+% \begin{tabularx}{\linewidth}{l p{0.4\linewidth} | l X l X}
+%   \multicolumn{2}{c |}{Statements}&\multicolumn{2}{c}{Reasons}\\
+%   \hline
+%   
+%   \hline
+%   \multicolumn{2}{c |}{}&\multicolumn{2}{c}{QDE}
